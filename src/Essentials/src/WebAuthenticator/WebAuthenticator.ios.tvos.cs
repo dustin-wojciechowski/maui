@@ -98,12 +98,14 @@ namespace Microsoft.Maui.Authentication
 #pragma warning disable CA1422 // 'SFAuthenticationSession' is obsoleted on: 'ios' 12.0 and later
 			if (OperatingSystem.IsIOSVersionAtLeast(11))
 			{
+#pragma warning disable CA1422
 				sf = new SFAuthenticationSession(WebUtils.GetNativeUrl(url), scheme, AuthSessionCallback);
 				using (sf)
 				{
 					sf.Start();
 					return await tcsResponse.Task;
 				}
+#pragma warning restore CA1422
 			}
 #pragma warning restore CA1422
 
