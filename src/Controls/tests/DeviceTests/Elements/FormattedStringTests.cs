@@ -9,7 +9,7 @@ using Xunit;
 namespace Microsoft.Maui.DeviceTests
 {
 	[Category(TestCategory.Label)]
-	public partial class FormattedStringTests : HandlerTestBase
+	public partial class FormattedStringTests : ControlsHandlerTestBase
 	{
 		[Fact]
 		public async Task NativeFormattedStringContainsSpan()
@@ -40,10 +40,10 @@ namespace Microsoft.Maui.DeviceTests
 
 				result = spannable.ToString();
 #elif WINDOWS
-				var runs = formattedString.ToRuns(fontManager: fontManager);
+				var tuples = formattedString.ToRunAndColorsTuples(fontManager: fontManager);
 
-				foreach (var r in runs)
-					result += r.Text;
+				foreach (var t in tuples)
+					result += t.Item1.Text;
 #endif
 				return result;
 			});

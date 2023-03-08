@@ -11,7 +11,7 @@ using Microsoft.UI.Xaml.Media;
 
 namespace Microsoft.Maui.Controls.Compatibility.ControlGallery.WinUI
 {
-	public class _57114Renderer : VisualElementRenderer<Bugzilla57114._57114View, _57114NativeView>
+	public class _57114Renderer : Handlers.Compatibility.VisualElementRenderer<Bugzilla57114._57114View, _57114NativeView>
 	{
 		protected override void OnElementChanged(ElementChangedEventArgs<Bugzilla57114._57114View> e)
 		{
@@ -45,7 +45,9 @@ namespace Microsoft.Maui.Controls.Compatibility.ControlGallery.WinUI
 
 		void OnTapped(object sender, TappedRoutedEventArgs tappedRoutedEventArgs)
 		{
+#pragma warning disable CS0618 // Type or member is obsolete
 			MessagingCenter.Send(this as object, Bugzilla57114._57114NativeGestureFiredMessage);
+#pragma warning restore CS0618 // Type or member is obsolete
 		}
 	}
 }

@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Microsoft.Maui.Controls.Compatibility.Platform.UAP;
+using Microsoft.Maui.Controls.Platform;
+using Microsoft.Maui.Controls.PlatformConfiguration.WindowsSpecific;
+using Microsoft.Maui.Graphics;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
 using Windows.UI.Text;
-using Microsoft.Maui.Controls.Platform;
-using Microsoft.Maui.Controls.Compatibility.Platform.UAP;
-using Microsoft.Maui.Controls.PlatformConfiguration.WindowsSpecific;
 using Specifics = Microsoft.Maui.Controls.PlatformConfiguration.WindowsSpecific.Label;
 using WRect = Windows.Foundation.Rect;
 using WThickness = Microsoft.UI.Xaml.Thickness;
-using Microsoft.Maui.Graphics;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 {
@@ -40,6 +40,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 		}
 	}
 
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class LabelRenderer : ViewRenderer<Label, TextBlock>
 	{
 		bool _fontApplied;
@@ -274,7 +275,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 				return;
 
 			if (isLabelDefault && _isInitiallyDefault)
+#pragma warning disable CS0612 // Type or member is obsolete
 				textBlock.ApplyFont(Font.SystemFontOfSize(Device.GetNamedSize(NamedSize.Medium, Element.GetType(), false)), Element.RequireFontManager());
+#pragma warning restore CS0612 // Type or member is obsolete
 			else
 				textBlock.ApplyFont(label.ToFont(), Element.RequireFontManager());
 
@@ -350,7 +353,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 					{
 						var span = formatted.Spans[i];
 
-						var run = span.ToRun(fontManager);
+						var run = span.ToRunAndColorsTuple(fontManager).Item1;
 						heights.Add(Control.FindDefaultLineHeight(run));
 						textBlock.Inlines.Add(run);
 					}

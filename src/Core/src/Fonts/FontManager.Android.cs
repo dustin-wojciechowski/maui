@@ -8,6 +8,7 @@ using AApplication = Android.App.Application;
 
 namespace Microsoft.Maui
 {
+	/// <inheritdoc/>
 	public class FontManager : IFontManager
 	{
 		static readonly string[] FontFolders = new[]
@@ -18,20 +19,29 @@ namespace Microsoft.Maui
 
 		readonly ConcurrentDictionary<(string? fontFamilyName, FontWeight weight, bool italic), Typeface?> _typefaces = new();
 		readonly IFontRegistrar _fontRegistrar;
-		readonly ILogger<FontManager>? _logger;
+		readonly IServiceProvider? _serviceProvider;
 
 		Typeface? _defaultTypeface;
 
-		public FontManager(IFontRegistrar fontRegistrar, ILogger<FontManager>? logger = null)
+		/// <summary>
+		/// Creates a new <see cref="EmbeddedFontLoader"/> instance.
+		/// </summary>
+		/// <param name="fontRegistrar">A <see cref="IFontRegistrar"/> instance to retrieve details from about registered fonts.</param>
+		/// <param name="serviceProvider">The applications <see cref="IServiceProvider"/>.
+		/// Typically this is provided through dependency injection.</param>
+		public FontManager(IFontRegistrar fontRegistrar, IServiceProvider? serviceProvider = null)
 		{
 			_fontRegistrar = fontRegistrar;
-			_logger = logger;
+			_serviceProvider = serviceProvider;
 		}
 
+		/// <inheritdoc/>
 		public double DefaultFontSize => 14; // 14sp
 
+		/// <inheritdoc/>
 		public Typeface DefaultTypeface => _defaultTypeface ??= Typeface.Default!;
 
+		/// <inheritdoc/>
 		public Typeface? GetTypeface(Font font)
 		{
 			if (font == Font.Default || (font.Weight == FontWeight.Regular && string.IsNullOrEmpty(font.Family) && font.Slant == FontSlant.Default))
@@ -40,10 +50,11 @@ namespace Microsoft.Maui
 			return _typefaces.GetOrAdd((font.Family, font.Weight, font.Slant != FontSlant.Default), CreateTypeface);
 		}
 
+		/// <inheritdoc/>
 		public FontSize GetFontSize(Font font, float defaultFontSize = 0)
 		{
-			var size = font.Size <= 0
-				? (defaultFontSize > 0 ? defaultFontSize : 14f)
+			var size = font.Size <= 0 || double.IsNaN(font.Size)
+				? (defaultFontSize > 0 ? defaultFontSize : (float)DefaultFontSize)
 				: (float)font.Size;
 
 			ComplexUnitType units;
@@ -65,6 +76,10 @@ namespace Microsoft.Maui
 			var asset = LoadTypefaceFromAsset(fontName, warning: true);
 			if (asset != null)
 				return asset;
+
+			// The font might be a file, such as a temporary file extracted from EmbeddedResource
+			if (File.Exists(fontName))
+				return Typeface.CreateFromFile(fontName);
 
 			var fontFile = FontFile.FromString(fontName);
 			if (!string.IsNullOrWhiteSpace(fontFile.Extension))
@@ -109,7 +124,7 @@ namespace Microsoft.Maui
 			catch (Exception ex)
 			{
 				if (warning)
-					_logger?.LogWarning(ex, "Unable to load font '{Font}' from assets.", fontfamily);
+					_serviceProvider?.CreateLogger<FontManager>()?.LogWarning(ex, "Unable to load font '{Font}' from assets.", fontfamily);
 			}
 
 			return null;
@@ -127,13 +142,11 @@ namespace Microsoft.Maui
 			{
 				if (GetFromAssets(fontFamily) is Typeface typeface)
 					result = typeface;
-				else if (FontNameToFontFile(fontFamily) is string f && File.Exists(f))
-					result = Typeface.CreateFromFile(f);
 				else
 					result = Typeface.Create(fontFamily, style);
 			}
 
-			if (PlatformVersion.IsAtLeast(28))
+			if (OperatingSystem.IsAndroidVersionAtLeast(28))
 				result = Typeface.Create(result, (int)weight, italic);
 			else
 				result = Typeface.Create(result, style);

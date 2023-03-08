@@ -7,7 +7,9 @@ using PlatformView = UIKit.UIView;
 using PlatformView = Android.Views.View;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformView = Tizen.NUI.BaseComponents.View;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 
@@ -20,6 +22,16 @@ namespace Microsoft.Maui.Handlers
 		public static CommandMapper<ITabbedView, ITabbedViewHandler> CommandMapper = new(ViewCommandMapper);
 
 		public TabbedViewHandler() : base(Mapper, CommandMapper)
+		{
+		}
+
+		public TabbedViewHandler(IPropertyMapper? mapper)
+			: base(mapper ?? Mapper, CommandMapper)
+		{
+		}
+
+		public TabbedViewHandler(IPropertyMapper? mapper, CommandMapper? commandMapper)
+			: base(mapper ?? Mapper, commandMapper ?? CommandMapper)
 		{
 		}
 

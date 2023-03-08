@@ -1,10 +1,10 @@
 using System;
 using System.ComponentModel;
-using Microsoft.Maui.Controls.Internals;
 using Microsoft.Maui.Controls.Compatibility.Platform.UWP;
-using Microsoft.UI.Xaml;
-using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Controls.Internals;
 using Microsoft.Maui.Controls.Platform;
+using Microsoft.Maui.Graphics;
+using Microsoft.UI.Xaml;
 
 namespace Microsoft.Maui.Controls.Compatibility
 {
@@ -14,6 +14,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 		public HandlerToRendererShim(IPlatformViewHandler vh)
 		{
+			Compatibility.Hosting.MauiAppBuilderExtensions.CheckForCompatibility();
 			ViewHandler = vh;
 		}
 

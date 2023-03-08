@@ -1,5 +1,3 @@
-using System.Data.Common;
-using System.Runtime.CompilerServices;
 using Microsoft.Maui.Graphics;
 #if __IOS__ || MACCATALYST
 using PlatformView = UIKit.UIView;
@@ -7,7 +5,9 @@ using PlatformView = UIKit.UIView;
 using PlatformView = Android.Views.View;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
-#elif NETSTANDARD
+#elif TIZEN
+using PlatformView = Tizen.NUI.BaseComponents.View;
+#elif (NETSTANDARD || !PLATFORM)
 using PlatformView = System.Object;
 #endif
 
@@ -50,8 +50,13 @@ namespace Microsoft.Maui.Handlers
 				[nameof(IView.AnchorY)] = MapAnchorY,
 				[nameof(IViewHandler.ContainerView)] = MapContainerView,
 				[nameof(IBorder.Border)] = MapBorderView,
-#if ANDROID || WINDOWS
+#if ANDROID || WINDOWS || TIZEN
 				[nameof(IToolbarElement.Toolbar)] = MapToolbar,
+#endif
+				[nameof(IView.InputTransparent)] = MapInputTransparent,
+				[nameof(IToolTipElement.ToolTip)] = MapToolTip,
+#if WINDOWS || MACCATALYST
+				[nameof(IContextFlyoutElement.ContextFlyout)] = MapContextFlyout,
 #endif
 			};
 
@@ -65,6 +70,8 @@ namespace Microsoft.Maui.Handlers
 		};
 
 		bool _hasContainer;
+
+		internal DataFlowDirection DataFlowDirection { get; set; }
 
 		protected ViewHandler(IPropertyMapper mapper, CommandMapper? commandMapper = null)
 			: base(mapper, commandMapper ?? ViewCommandMapper)
@@ -88,24 +95,14 @@ namespace Microsoft.Maui.Handlers
 			}
 		}
 
+		public virtual bool NeedsContainer
+		{
+			get => VirtualView.NeedsContainer();
+		}
+
 		protected abstract void SetupContainer();
 
 		protected abstract void RemoveContainer();
-
-		public virtual bool NeedsContainer
-		{
-			get
-			{
-#if WINDOWS
-				if(VirtualView is IBorderView border)
-					return border?.Shape != null || border?.Stroke != null;
-				
-				return false;
-#else
-				return VirtualView?.Clip != null || VirtualView?.Shadow != null || (VirtualView as IBorder)?.Border != null;
-#endif
-			}
-		}
 
 		public PlatformView? ContainerView { get; private protected set; }
 
@@ -125,7 +122,7 @@ namespace Microsoft.Maui.Handlers
 
 		public abstract Size GetDesiredSize(double widthConstraint, double heightConstraint);
 
-		public abstract void PlatformArrange(Rectangle frame);
+		public abstract void PlatformArrange(Rect frame);
 
 		private protected abstract PlatformView OnCreatePlatformView();
 
@@ -145,7 +142,7 @@ namespace Microsoft.Maui.Handlers
 		}
 #endif
 
-#if !NETSTANDARD
+#if !(NETSTANDARD || !PLATFORM)
 		private protected abstract void OnConnectHandler(PlatformView platformView);
 
 		partial void ConnectingHandler(PlatformView? platformView);
@@ -204,12 +201,28 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapVisibility(IViewHandler handler, IView view)
 		{
-			((PlatformView?)handler.PlatformView)?.UpdateVisibility(view);
+			if (handler.HasContainer)
+				((PlatformView?)handler.ContainerView)?.UpdateVisibility(view);
+			else
+				((PlatformView?)handler.PlatformView)?.UpdateVisibility(view);
 		}
 
 		public static void MapBackground(IViewHandler handler, IView view)
 		{
-			((PlatformView?)handler.PlatformView)?.UpdateBackground(view);
+			if (handler.PlatformView is not PlatformView platformView)
+				return;
+
+			if (view.Background is ImageSourcePaint image)
+			{
+				var provider = handler.GetRequiredService<IImageSourceServiceProvider>();
+
+				platformView.UpdateBackgroundImageSourceAsync(image.ImageSource, provider)
+					.FireAndForget(handler);
+			}
+			else
+			{
+				platformView.UpdateBackground(view);
+			}
 		}
 
 		public static void MapFlowDirection(IViewHandler handler, IView view)
@@ -219,7 +232,10 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapOpacity(IViewHandler handler, IView view)
 		{
-			((PlatformView?)handler.PlatformView)?.UpdateOpacity(view);
+			if (handler.HasContainer)
+				((PlatformView?)handler.ContainerView)?.UpdateOpacity(view);
+			else
+				((PlatformView?)handler.PlatformView)?.UpdateOpacity(view);
 		}
 
 		public static void MapAutomationId(IViewHandler handler, IView view)
@@ -229,36 +245,16 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapClip(IViewHandler handler, IView view)
 		{
-			var clipShape = view.Clip;
-
-			if (clipShape != null)
-			{
-				handler.HasContainer = true;
-			}
-			else
-			{
-				if (handler is ViewHandler viewHandler)
-					handler.HasContainer = viewHandler.NeedsContainer;
-			}
+			handler.UpdateValue(nameof(IViewHandler.ContainerView));
 
 			((PlatformView?)handler.ContainerView)?.UpdateClip(view);
 		}
 
 		public static void MapShadow(IViewHandler handler, IView view)
 		{
-			var shadow = view.Shadow;
+			handler.UpdateValue(nameof(IViewHandler.ContainerView));
 
-			if (shadow != null)
-			{
-				handler.HasContainer = true;
-			}
-			else
-			{
-				if (handler is ViewHandler viewHandler)
-					handler.HasContainer = viewHandler.NeedsContainer;
-			}
-
- 			((PlatformView?)handler.ContainerView)?.UpdateShadow(view);
+			((PlatformView?)handler.ContainerView)?.UpdateShadow(view);
 		}
 
 		static partial void MappingSemantics(IViewHandler handler, IView view);
@@ -278,23 +274,25 @@ namespace Microsoft.Maui.Handlers
 		{
 			if (handler is ViewHandler viewHandler)
 				handler.HasContainer = viewHandler.NeedsContainer;
+			else
+				handler.HasContainer = view.NeedsContainer();
+
+			UpdateInputTransparentOnContainerView(handler, view);
+		}
+
+		static void UpdateInputTransparentOnContainerView(IViewHandler handler, IView view)
+		{
+#if ANDROID
+			if (handler.ContainerView is WrapperView wrapper)
+				wrapper.InputTransparent = view.InputTransparent;
+#endif
 		}
 
 		public static void MapBorderView(IViewHandler handler, IView view)
 		{
-			var border = (view as IBorder)?.Border;
+			handler.UpdateValue(nameof(IViewHandler.ContainerView));
 
-			if (border != null)
-			{
-				handler.HasContainer = true;
-			}
-			else
-			{
-				if (handler is ViewHandler viewHandler)
-					handler.HasContainer = viewHandler.NeedsContainer;
-			}
-
- 			((PlatformView?)handler.ContainerView)?.UpdateBorder(view);
+			((PlatformView?)handler.ContainerView)?.UpdateBorder(view);
 		}
 
 		static partial void MappingFrame(IViewHandler handler, IView view);
@@ -325,9 +323,27 @@ namespace Microsoft.Maui.Handlers
 			}
 		}
 
+		public static void MapInputTransparent(IViewHandler handler, IView view)
+		{
+#if ANDROID
+			handler.UpdateValue(nameof(IViewHandler.ContainerView));
+			UpdateInputTransparentOnContainerView(handler, view);
+#else
+			((PlatformView?)handler.PlatformView)?.UpdateInputTransparent(handler, view);
+#endif
+		}
+
 		public static void MapUnfocus(IViewHandler handler, IView view, object? args)
 		{
 			((PlatformView?)handler.PlatformView)?.Unfocus(view);
+		}
+
+		public static void MapToolTip(IViewHandler handler, IView view)
+		{
+#if PLATFORM
+			if (view is IToolTipElement tooltipContainer)
+				handler.ToPlatform().UpdateToolTip(tooltipContainer.ToolTip);
+#endif
 		}
 	}
 }

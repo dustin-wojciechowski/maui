@@ -32,10 +32,9 @@ namespace Microsoft.Maui.Platform
 			}
 			else
 			{
-				var androidColor = placeholderTextColor.ToPlatform();
-				if (!editText.HintTextColors.IsOneColor(ColorStates.EditText, androidColor))
+				if (PlatformInterop.CreateEditTextColorStateList(editText.HintTextColors, placeholderTextColor.ToPlatform()) is ColorStateList c)
 				{
-					editText.SetHintTextColor(ColorStateListExtensions.CreateEditText(androidColor));
+					editText.SetHintTextColor(c);
 				}
 			}
 		}
@@ -134,11 +133,6 @@ namespace Microsoft.Maui.Platform
 
 		public static void UpdateIsEnabled(this SearchView searchView, ISearchBar searchBar, EditText? editText = null)
 		{
-			if (!searchBar.IsEnabled)
-			{
-				searchView.ClearFocus();
-			}
-		
 			editText ??= searchView.GetFirstChildOfType<EditText>();
 
 			if (editText == null)

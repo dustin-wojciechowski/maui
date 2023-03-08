@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -29,6 +30,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 		public RelativeLayout()
 		{
+			Hosting.CompatibilityCheck.CheckForCompatibility();
 #pragma warning disable CS0618 // Type or member is obsolete
 			VerticalOptions = HorizontalOptions = LayoutOptions.FillAndExpand;
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -39,6 +41,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 				new PlatformConfigurationRegistry<RelativeLayout>(this));
 		}
 
+		/// <inheritdoc/>
 		public IPlatformElementConfiguration<T, RelativeLayout> On<T>() where T : IConfigPlatform
 		{
 			return _platformConfigurationRegistry.Value.On<T>();
@@ -187,13 +190,13 @@ namespace Microsoft.Maui.Controls.Compatibility
 		{
 			double mockWidth = double.IsPositiveInfinity(widthConstraint) ? (Parent as VisualElement).Width : widthConstraint;
 			double mockHeight = double.IsPositiveInfinity(heightConstraint) ? (Parent as VisualElement).Height : heightConstraint;
-			MockBounds(new Rectangle(0, 0, mockWidth, mockHeight));
+			MockBounds(new Rect(0, 0, mockWidth, mockHeight));
 
-			var boundsRectangle = new Rectangle();
+			var boundsRectangle = new Rect();
 			var set = false;
 			foreach (View child in ChildrenInSolveOrder)
 			{
-				Rectangle bounds = SolveView(child);
+				Rect bounds = SolveView(child);
 				child.MockBounds(bounds);
 				if (!set)
 				{
@@ -295,11 +298,11 @@ namespace Microsoft.Maui.Controls.Compatibility
 			else
 				height = () => view.Measure(widthConstraint != null ? width() : Width, Height, MeasureFlags.IncludeMargins).Request.Height;
 
-			BoundsConstraint bounds = BoundsConstraint.FromExpression(() => new Rectangle(x(), y(), width(), height()), parents.Distinct().ToArray());
+			BoundsConstraint bounds = BoundsConstraint.FromExpression(() => new Rect(x(), y(), width(), height()), parents.Distinct().ToArray());
 			SetBoundsConstraint(view, bounds);
 		}
 
-		static Rectangle SolveView(View view)
+		static Rect SolveView(View view)
 		{
 			BoundsConstraint boundsConstraint = GetBoundsConstraint(view);
 
@@ -315,7 +318,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 		public interface IRelativeList<T> : IList<T> where T : View
 		{
-			void Add(T view, Expression<Func<Rectangle>> bounds);
+			void Add(T view, Expression<Func<Rect>> bounds);
 
 			void Add(T view, Expression<Func<double>> x = null, Expression<Func<double>> y = null, Expression<Func<double>> width = null, Expression<Func<double>> height = null);
 
@@ -331,7 +334,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 			internal RelativeLayout Parent { get; set; }
 
-			public void Add(View view, Expression<Func<Rectangle>> bounds)
+			public void Add(View view, Expression<Func<Rect>> bounds)
 			{
 				if (bounds == null)
 					throw new ArgumentNullException(nameof(bounds));
@@ -353,7 +356,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 				parents.AddRange(ExpressionSearch.Default.FindObjects<View>(width));
 				parents.AddRange(ExpressionSearch.Default.FindObjects<View>(height));
 
-				BoundsConstraint bounds = BoundsConstraint.FromExpression(() => new Rectangle(xCompiled(), yCompiled(), widthCompiled(), heightCompiled()), fromExpression: true, parents: parents.Distinct().ToArray());
+				BoundsConstraint bounds = BoundsConstraint.FromExpression(() => new Rect(xCompiled(), yCompiled(), widthCompiled(), heightCompiled()), fromExpression: true, parents: parents.Distinct().ToArray());
 
 				SetBoundsConstraint(view, bounds);
 

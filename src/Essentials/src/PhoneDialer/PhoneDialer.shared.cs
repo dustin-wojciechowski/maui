@@ -1,44 +1,70 @@
 #nullable enable
 using System;
-using System.ComponentModel;
-using Microsoft.Maui.Essentials;
-using Microsoft.Maui.Essentials.Implementations;
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.ApplicationModel.Communication
 {
+	/// <summary>
+	/// The PhoneDialer API enables an application to open a phone number in the dialer.
+	/// </summary>
 	public interface IPhoneDialer
 	{
+		/// <summary>
+		/// Gets a value indicating whether using the phone dialer is supported on this device.
+		/// </summary>
 		bool IsSupported { get; }
 
+		/// <summary>
+		/// Open the phone dialer to a specific phone number.
+		/// </summary>
+		/// <remarks>
+		/// Will throw <see cref="ArgumentNullException"/> if <paramref name="number"/> is not valid.
+		/// Will throw <see cref="FeatureNotSupportedException"/> if making phone calls is not supported on the device.
+		/// </remarks>
+		/// <exception cref="ArgumentNullException">Thrown if <paramref name="number"/> is not valid.</exception>
+		/// <exception cref="FeatureNotSupportedException">Thrown if making phone calls is not supported on the device.</exception>
+		/// <param name="number">Phone number to initialize the dialer with.</param>
 		void Open(string number);
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/PhoneDialer.xml" path="Type[@FullName='Microsoft.Maui.Essentials.PhoneDialer']/Docs" />
+	/// <summary>
+	/// The PhoneDialer API enables an application to open a phone number in the dialer.
+	/// </summary>
 	public static class PhoneDialer
 	{
-		public static bool IsSupported => Current.IsSupported;
+		/// <summary>
+		/// Gets a value indicating whether using the phone dialer is supported on this device.
+		/// </summary>
+		public static bool IsSupported =>
+			Default.IsSupported;
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/PhoneDialer.xml" path="//Member[@MemberName='Open']/Docs" />
+		/// <summary>
+		/// Open the phone dialer to a specific phone number.
+		/// </summary>
+		/// <remarks>
+		/// Will throw <see cref="ArgumentNullException"/> if <paramref name="number"/> is not valid.
+		/// Will throw <see cref="FeatureNotSupportedException"/> if making phone calls is not supported on the device.
+		/// </remarks>
+		/// <exception cref="ArgumentNullException">Thrown if <paramref name="number"/> is not valid.</exception>
+		/// <exception cref="FeatureNotSupportedException">Thrown if making phone calls is not supported on the device.</exception>
+		/// <param name="number">Phone number to initialize the dialer with.</param>
 		public static void Open(string number)
-			=> Current.Open(number);
+			=> Default.Open(number);
 
-		static IPhoneDialer? currentImplementation;
+		static IPhoneDialer? defaultImplementation;
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static IPhoneDialer Current =>
-			currentImplementation ??= new PhoneDialerImplementation();
+		/// <summary>
+		/// Provides the default implementation for static usage of this API.
+		/// </summary>
+		public static IPhoneDialer Default =>
+			defaultImplementation ??= new PhoneDialerImplementation();
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static void SetCurrent(IPhoneDialer? implementation) =>
-			currentImplementation = implementation;
+		internal static void SetDefault(IPhoneDialer? implementation) =>
+			defaultImplementation = implementation;
 	}
-}
 
-namespace Microsoft.Maui.Essentials.Implementations
-{
-	partial class PhoneDialerImplementation
+	partial class PhoneDialerImplementation : IPhoneDialer
 	{
-		internal void ValidateOpen(string number)
+		void ValidateOpen(string number)
 		{
 			if (string.IsNullOrWhiteSpace(number))
 				throw new ArgumentNullException(nameof(number));

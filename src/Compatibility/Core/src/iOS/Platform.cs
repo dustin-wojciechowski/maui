@@ -17,6 +17,7 @@ using IOPath = System.IO.Path;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 {
+	[System.Obsolete]
 	public class Platform : BindableObject, INavigation, IDisposable
 	{
 		internal static readonly BindableProperty RendererProperty = BindableProperty.CreateAttached("Renderer", typeof(IVisualElementRenderer), typeof(Platform), default(IVisualElementRenderer),
@@ -186,7 +187,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 				// While the above IsiOS13OrNewer will always be false if __XCODE11__ is true
 				// the UIModalPresentationStyle.Automatic is the only Xcode 11 API
 				// for readability I decided to only take this part out
+#pragma warning disable CA1416 // TODO: 'UIModalPresentationStyle.Automatic' is only supported on: 'ios' 13.0 and later
 				if (presentationStyle == UIKit.UIModalPresentationStyle.Automatic)
+#pragma warning restore CA1416
 					shouldFire = false;
 
 				if (presentationStyle == UIKit.UIModalPresentationStyle.FullScreen)
@@ -322,8 +325,10 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 					safeAreaInsets = new UIEdgeInsets(UIApplication.SharedApplication.StatusBarFrame.Size.Height, 0, 0, 0);
 				else if (UIApplication.SharedApplication.GetKeyWindow() != null)
 					safeAreaInsets = UIApplication.SharedApplication.GetKeyWindow().SafeAreaInsets;
+#pragma warning disable CA1416, CA1422  // TODO: UIApplication.Windows is unsupported on: 'ios' 15.0 and later
 				else if (UIApplication.SharedApplication.Windows.Length > 0)
 					safeAreaInsets = UIApplication.SharedApplication.Windows[0].SafeAreaInsets;
+#pragma warning restore CA1416, CA1422
 				else
 					safeAreaInsets = UIEdgeInsets.Zero;
 
@@ -431,7 +436,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 
 		void PresentAlert(AlertArguments arguments)
 		{
-			var window = new UIWindow { BackgroundColor = Colors.Transparent.ToUIColor() };
+			var window = new UIWindow { BackgroundColor = Colors.Transparent.ToPlatform() };
 
 			var alert = UIAlertController.Create(arguments.Title, arguments.Message, UIAlertControllerStyle.Alert);
 			var oldFrame = alert.View.Frame;
@@ -454,7 +459,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 
 		void PresentPrompt(PromptArguments arguments)
 		{
-			var window = new UIWindow { BackgroundColor = Colors.Transparent.ToUIColor() };
+			var window = new UIWindow { BackgroundColor = Colors.Transparent.ToPlatform() };
 
 			var alert = UIAlertController.Create(arguments.Title, arguments.Message, UIAlertControllerStyle.Alert);
 			alert.AddTextField(uiTextField =>
@@ -476,7 +481,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 		void PresentActionSheet(ActionSheetArguments arguments)
 		{
 			var alert = UIAlertController.Create(arguments.Title, null, UIAlertControllerStyle.ActionSheet);
-			var window = new UIWindow { BackgroundColor = Colors.Transparent.ToUIColor() };
+			var window = new UIWindow { BackgroundColor = Colors.Transparent.ToPlatform() };
 
 			// Clicking outside of an ActionSheet is an implicit cancel on iPads. If we don't handle it, it freezes the app.
 			if (arguments.Cancel != null || UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
@@ -505,7 +510,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 		static void PresentPopUp(UIWindow window, UIAlertController alert, ActionSheetArguments arguments = null)
 		{
 			window.RootViewController = new UIViewController();
-			window.RootViewController.View.BackgroundColor = Colors.Transparent.ToUIColor();
+			window.RootViewController.View.BackgroundColor = Colors.Transparent.ToPlatform();
 			window.WindowLevel = UIWindowLevel.Alert + 1;
 			window.MakeKeyAndVisible();
 
@@ -579,6 +584,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 			_renderer.View?.Window?.EndEditing(true);
 		}
 
+		[System.Obsolete]
 		internal class DefaultRenderer : VisualElementRenderer<VisualElement>
 		{
 			public override UIView HitTest(CGPoint point, UIEvent uievent)
@@ -659,7 +665,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 				if (!PageIsChildOfPlatform(sender))
 					return;
 				busyCount = Math.Max(0, enabled ? busyCount + 1 : busyCount - 1);
+#pragma warning disable CA1416, CA1422  // TODO: 'UIApplication.NetworkActivityIndicatorVisible' is unsupported on: 'ios' 13.0 and later
 				UIApplication.SharedApplication.NetworkActivityIndicatorVisible = busyCount > 0;
+#pragma warning restore CA1416, CA1422
 			});
 
 			MessagingCenter.Subscribe(this, Page.AlertSignalName, (Page sender, AlertArguments arguments) =>

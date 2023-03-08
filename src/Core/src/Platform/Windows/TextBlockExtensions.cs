@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
+using System.Xml;
 using System.Xml.Linq;
-using Microsoft.UI.Xaml;
+using System.Xml.Resolvers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
 
@@ -35,18 +37,6 @@ namespace Microsoft.Maui.Platform
 		public static void UpdateCharacterSpacing(this TextBlock platformControl, ITextStyle label)
 		{
 			platformControl.CharacterSpacing = label.CharacterSpacing.ToEm();
-		}
-
-		public static void UpdateMaxLines(this TextBlock platformControl, ILabel label)
-		{
-			if (label.MaxLines >= 0)
-			{
-				platformControl.MaxLines = label.MaxLines;
-			}
-			else
-			{
-				platformControl.MaxLines = 0;
-			}
 		}
 
 		public static void UpdateTextDecorations(this TextBlock platformControl, ILabel label)
@@ -123,7 +113,7 @@ namespace Microsoft.Maui.Platform
 
 			try
 			{
-				var element = XElement.Parse(modifiedText);
+				var element = ParseXhtml(modifiedText);
 				LabelHtmlHelper.ParseText(element, platformControl.Inlines, label);
 			}
 			catch (Exception)
@@ -133,49 +123,37 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
-		public static void UpdateLineBreakMode(this TextBlock platformControl, ILabel label)
-		{
-			var lineBreakMode = label.LineBreakMode;
-
-			switch (lineBreakMode)
-			{
-				case LineBreakMode.NoWrap:
-					platformControl.TextTrimming = TextTrimming.Clip;
-					platformControl.TextWrapping = TextWrapping.NoWrap;
-					break;
-				case LineBreakMode.WordWrap:
-					platformControl.TextTrimming = TextTrimming.None;
-					platformControl.TextWrapping = TextWrapping.Wrap;
-					break;
-				case LineBreakMode.CharacterWrap:
-					platformControl.TextTrimming = TextTrimming.WordEllipsis;
-					platformControl.TextWrapping = TextWrapping.Wrap;
-					break;
-				case LineBreakMode.HeadTruncation:
-					// TODO: This truncates at the end.
-					platformControl.TextTrimming = TextTrimming.WordEllipsis;
-					platformControl.DetermineTruncatedTextWrapping();
-					break;
-				case LineBreakMode.TailTruncation:
-					platformControl.TextTrimming = TextTrimming.CharacterEllipsis;
-					platformControl.DetermineTruncatedTextWrapping();
-					break;
-				case LineBreakMode.MiddleTruncation:
-					// TODO: This truncates at the end.
-					platformControl.TextTrimming = TextTrimming.WordEllipsis;
-					platformControl.DetermineTruncatedTextWrapping();
-					break;
-				default:
-					throw new ArgumentOutOfRangeException();
-			}
-		}
-
-		internal static void DetermineTruncatedTextWrapping(this TextBlock textBlock) =>
-			textBlock.TextWrapping = textBlock.MaxLines > 1 ? TextWrapping.Wrap : TextWrapping.NoWrap;
-
 		internal static void UpdateTextPlainText(this TextBlock platformControl, IText label)
 		{
 			platformControl.Text = label.Text;
+		}
+
+		static XElement? ParseXhtml(string? html)
+		{
+			if (string.IsNullOrEmpty(html))
+				return null;
+
+			XmlNameTable nt = new NameTable();
+			XmlNamespaceManager nsmgr = new XmlNamespaceManager(nt);
+			var xmlParserContext = new XmlParserContext(null, nsmgr, null, XmlSpace.None);
+			XmlParserContext context = xmlParserContext;
+			context.DocTypeName = "html";
+			context.PublicId = "-//W3C//DTD XHTML 1.0 Strict//EN";
+			context.SystemId = "xhtml1-strict.dtd";
+			XmlParserContext xhtmlContext = context;
+
+			StringReader stringReader = new StringReader(html);
+
+			XmlReaderSettings settings = new XmlReaderSettings
+			{
+				DtdProcessing = DtdProcessing.Parse,
+				ValidationType = ValidationType.DTD,
+				XmlResolver = new XmlPreloadedResolver(XmlKnownDtds.All)
+			};
+
+			XmlReader reader = XmlReader.Create(stringReader, settings, xhtmlContext);
+
+			return XElement.Load(reader);
 		}
 	}
 }

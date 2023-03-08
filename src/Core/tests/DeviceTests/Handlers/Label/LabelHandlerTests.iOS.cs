@@ -186,9 +186,6 @@ namespace Microsoft.Maui.DeviceTests
 		Color GetNativeTextColor(LabelHandler labelHandler) =>
 			GetPlatformLabel(labelHandler).TextColor.ToColor();
 
-		int GetNativeMaxLines(LabelHandler labelHandler) =>
- 			(int)GetPlatformLabel(labelHandler).Lines;
-
 		double GetNativeCharacterSpacing(LabelHandler labelHandler)
 		{
 			var platformLabel = GetPlatformLabel(labelHandler);
@@ -208,9 +205,6 @@ namespace Microsoft.Maui.DeviceTests
 		UITextAlignment GetNativeHorizontalTextAlignment(LabelHandler labelHandler) =>
 			GetPlatformLabel(labelHandler).TextAlignment;
 
-		UILineBreakMode GetNativeLineBreakMode(LabelHandler labelHandler) =>
-			GetPlatformLabel(labelHandler).LineBreakMode;
-
 		double GetNativeLineHeight(LabelHandler labelHandler)
 		{
 			var attrText = GetPlatformLabel(labelHandler).AttributedText;
@@ -224,16 +218,6 @@ namespace Microsoft.Maui.DeviceTests
 				return new nfloat(-1.0f);
 
 			return paragraphStyle.LineHeightMultiple;
-		}
-
-		Task ValidateHasColor(ILabel label, Color color, Action action = null)
-		{
-			return InvokeOnMainThreadAsync(() =>
-			{
-				var platformLabel = GetPlatformLabel(CreateHandler(label));
-				action?.Invoke();
-				platformLabel.AssertContainsColor(color);
-			});
 		}
 	}
 }

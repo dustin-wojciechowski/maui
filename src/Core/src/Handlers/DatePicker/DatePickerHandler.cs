@@ -1,10 +1,14 @@
-﻿#if __IOS__ || MACCATALYST
+﻿#if IOS && !MACCATALYST
 using PlatformView = Microsoft.Maui.Platform.MauiDatePicker;
+#elif MACCATALYST
+using PlatformView = UIKit.UIDatePicker;
 #elif MONOANDROID
 using PlatformView = Microsoft.Maui.Platform.MauiDatePicker;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.Controls.CalendarDatePicker;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformView = Tizen.UIExtensions.NUI.Entry;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 
@@ -14,8 +18,10 @@ namespace Microsoft.Maui.Handlers
 	{
 		public static IPropertyMapper<IDatePicker, IDatePickerHandler> Mapper = new PropertyMapper<IDatePicker, IDatePickerHandler>(ViewHandler.ViewMapper)
 		{
-#if __ANDROID__
+#if ANDROID || WINDOWS
 			[nameof(IDatePicker.Background)] = MapBackground,
+#elif IOS
+			[nameof(IDatePicker.FlowDirection)] = MapFlowDirection,
 #endif
 			[nameof(IDatePicker.CharacterSpacing)] = MapCharacterSpacing,
 			[nameof(IDatePicker.Date)] = MapDate,
@@ -34,7 +40,13 @@ namespace Microsoft.Maui.Handlers
 		{
 		}
 
-		public DatePickerHandler(IPropertyMapper mapper) : base(mapper)
+		public DatePickerHandler(IPropertyMapper? mapper)
+			: base(mapper ?? Mapper, CommandMapper)
+		{
+		}
+
+		public DatePickerHandler(IPropertyMapper? mapper, CommandMapper? commandMapper)
+			: base(mapper ?? Mapper, commandMapper ?? CommandMapper)
 		{
 		}
 

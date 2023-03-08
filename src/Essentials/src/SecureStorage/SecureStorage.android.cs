@@ -4,11 +4,11 @@ using Android.Content;
 using AndroidX.Security.Crypto;
 using Javax.Crypto;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Storage
 {
-	public partial class SecureStorageImplementation : ISecureStorage
+	partial class SecureStorageImplementation : ISecureStorage
 	{
-		static readonly object locker = new object();
+		readonly object locker = new object();
 
 		Task<string> PlatformGetAsync(string key)
 		{
@@ -23,6 +23,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 				}
 				catch (AEADBadTagException)
 				{
+					// TODO: Use Logger here?
 					System.Diagnostics.Debug.WriteLine($"Unable to decrypt key, {key}, which is likely due to an app uninstall. Removing old key and returning null.");
 					Remove(key);
 
@@ -30,6 +31,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 				}
 				catch (Java.Lang.SecurityException)
 				{
+					// TODO: Use Logger here?
 					System.Diagnostics.Debug.WriteLine($"Unable to decrypt key, {key}, which is likely due to key corruption. Removing old key and returning null.");
 					Remove(key);
 
@@ -44,18 +46,14 @@ namespace Microsoft.Maui.Essentials.Implementations
 			{
 				lock (locker)
 				{
-					using (var editor = GetEncryptedSharedPreferences().Edit())
-					{
-						if (data == null)
-						{
-							editor.Remove(key);
-						}
-						else
-						{
-							editor.PutString(key, data);
-						}
-						editor.Apply();
-					}
+					using var editor = GetEncryptedSharedPreferences().Edit();
+
+					if (data == null)
+						editor.Remove(key);
+					else
+						editor.PutString(key, data);
+
+					editor.Apply();
 				}
 			});
 		}
@@ -77,14 +75,12 @@ namespace Microsoft.Maui.Essentials.Implementations
 		{
 			lock (locker)
 			{
-				using (var editor = PreferencesImplementation.GetSharedPreferences(Alias).Edit())
-				{
-					editor.Clear().Apply();
-				}
+				using var editor = PreferencesImplementation.GetSharedPreferences(Alias).Edit();
+				editor.Clear().Apply();
 			}
 		}
 
-		ISharedPreferences GetEncryptedSharedPreferences()
+		static ISharedPreferences GetEncryptedSharedPreferences()
 		{
 			var context = Application.Context;
 
@@ -97,8 +93,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 				Alias,
 				prefsMainKey,
 				EncryptedSharedPreferences.PrefKeyEncryptionScheme.Aes256Siv,
-				EncryptedSharedPreferences.PrefValueEncryptionScheme.Aes256Gcm
-			);
+				EncryptedSharedPreferences.PrefValueEncryptionScheme.Aes256Gcm);
 
 			return sharedPreferences;
 		}

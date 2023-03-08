@@ -1,10 +1,14 @@
-﻿#if __IOS__ || MACCATALYST
+﻿#if IOS && !MACCATALYST
 using PlatformView = Microsoft.Maui.Platform.MauiTimePicker;
-#elif MONOANDROID
+#elif MACCATALYST
+using PlatformView = UIKit.UIDatePicker;
+#elif ANDROID
 using PlatformView = Microsoft.Maui.Platform.MauiTimePicker;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.Controls.TimePicker;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformView = Tizen.UIExtensions.NUI.Entry;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 
@@ -12,10 +16,12 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class TimePickerHandler : ITimePickerHandler
 	{
-		public static IPropertyMapper<ITimePicker, ITimePickerHandler> TimePickerMapper = new PropertyMapper<ITimePicker, ITimePickerHandler>(ViewHandler.ViewMapper)
+		public static IPropertyMapper<ITimePicker, ITimePickerHandler> Mapper = new PropertyMapper<ITimePicker, ITimePickerHandler>(ViewHandler.ViewMapper)
 		{
-#if __ANDROID__
+#if ANDROID || WINDOWS
 			[nameof(ITimePicker.Background)] = MapBackground,
+#elif IOS
+			[nameof(ITimePicker.FlowDirection)] = MapFlowDirection,
 #endif
 			[nameof(ITimePicker.CharacterSpacing)] = MapCharacterSpacing,
 			[nameof(ITimePicker.Font)] = MapFont,
@@ -28,11 +34,17 @@ namespace Microsoft.Maui.Handlers
 		{
 		};
 
-		public TimePickerHandler() : base(TimePickerMapper)
+		public TimePickerHandler() : base(Mapper)
 		{
 		}
 
-		public TimePickerHandler(IPropertyMapper mapper) : base(mapper ?? TimePickerMapper)
+		public TimePickerHandler(IPropertyMapper? mapper)
+			: base(mapper ?? Mapper, CommandMapper)
+		{
+		}
+
+		public TimePickerHandler(IPropertyMapper? mapper, CommandMapper? commandMapper)
+			: base(mapper ?? Mapper, commandMapper ?? CommandMapper)
 		{
 		}
 

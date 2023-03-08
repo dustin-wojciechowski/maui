@@ -11,9 +11,6 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class PickerHandler : ViewHandler<IPicker, MauiPicker>
 	{
-		static Drawable? s_defaultBackground;
-		static ColorStateList? s_defaultTitleColors { get; set; }
-		static ColorStateList? s_defaultTextColors { get; set; }
 		AlertDialog? _dialog;
 
 		protected override MauiPicker CreatePlatformView() =>
@@ -24,12 +21,7 @@ namespace Microsoft.Maui.Handlers
 			platformView.FocusChange += OnFocusChange;
 			platformView.Click += OnClick;
 
-			if (VirtualView.Items is INotifyCollectionChanged notifyCollection)
-				notifyCollection.CollectionChanged += OnRowsCollectionChanged;
-
 			base.ConnectHandler(platformView);
-
-			SetupDefaults(platformView);
 		}
 
 		protected override void DisconnectHandler(MauiPicker platformView)
@@ -37,26 +29,19 @@ namespace Microsoft.Maui.Handlers
 			platformView.FocusChange -= OnFocusChange;
 			platformView.Click -= OnClick;
 
-			if (VirtualView.Items is INotifyCollectionChanged notifyCollection)
-				notifyCollection.CollectionChanged -= OnRowsCollectionChanged;
-
 			base.DisconnectHandler(platformView);
-		}
-
-		void SetupDefaults(MauiPicker platformView)
-		{
-			s_defaultBackground = platformView.Background;
-			s_defaultTitleColors = platformView.HintTextColors;
-			s_defaultTextColors = platformView.TextColors;
 		}
 
 		// This is a Android-specific mapping
 		public static void MapBackground(IPickerHandler handler, IPicker picker)
 		{
-			handler.PlatformView?.UpdateBackground(picker, s_defaultBackground);
+			handler.PlatformView?.UpdateBackground(picker);
 		}
 
+		// TODO Uncomment me on NET8 [Obsolete]
 		public static void MapReload(IPickerHandler handler, IPicker picker, object? args) => Reload(handler);
+
+		internal static void MapItems(IPickerHandler handler, IPicker picker) => Reload(handler);
 
 		public static void MapTitle(IPickerHandler handler, IPicker picker)
 		{
@@ -65,7 +50,7 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapTitleColor(IPickerHandler handler, IPicker picker)
 		{
-			handler.PlatformView?.UpdateTitleColor(picker, s_defaultTitleColors);
+			handler.PlatformView?.UpdateTitleColor(picker);
 		}
 
 		public static void MapSelectedIndex(IPickerHandler handler, IPicker picker)
@@ -92,7 +77,7 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapTextColor(IPickerHandler handler, IPicker picker)
 		{
-			handler.PlatformView.UpdateTextColor(picker, s_defaultTextColors);
+			handler.PlatformView.UpdateTextColor(picker);
 		}
 
 		public static void MapVerticalTextAlignment(IPickerHandler handler, IPicker picker)
@@ -115,7 +100,6 @@ namespace Microsoft.Maui.Handlers
 			else if (_dialog != null)
 			{
 				_dialog.Hide();
-				PlatformView.ClearFocus();
 				_dialog = null;
 			}
 		}
@@ -133,11 +117,20 @@ namespace Microsoft.Maui.Handlers
 					else
 					{
 						var title = new SpannableString(VirtualView.Title ?? string.Empty);
+#pragma warning disable CA1416 // https://github.com/xamarin/xamarin-android/issues/6962
 						title.SetSpan(new ForegroundColorSpan(VirtualView.TitleColor.ToPlatform()), 0, title.Length(), SpanTypes.ExclusiveExclusive);
+#pragma warning restore CA1416
 						builder.SetTitle(title);
 					}
 
 					string[] items = VirtualView.GetItemsAsArray();
+
+					for (var i = 0; i < items.Length; i++)
+					{
+						var item = items[i];
+						if (item == null)
+							items[i] = String.Empty;
+					}
 
 					builder.SetItems(items, (s, e) =>
 					{
@@ -158,7 +151,6 @@ namespace Microsoft.Maui.Handlers
 
 				_dialog.DismissEvent += (sender, args) =>
 				{
-					_dialog?.Dispose();
 					_dialog = null;
 				};
 
@@ -166,16 +158,8 @@ namespace Microsoft.Maui.Handlers
 			}
 		}
 
-		void OnRowsCollectionChanged(object? sender, EventArgs e)
-		{
-			Reload(this);
-		}
-
 		static void Reload(IPickerHandler handler)
 		{
-			if (handler.VirtualView == null || handler.PlatformView == null)
-				return;
-
 			handler.PlatformView.UpdatePicker(handler.VirtualView);
 		}
 	}

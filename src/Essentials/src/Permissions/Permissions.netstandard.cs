@@ -1,27 +1,43 @@
 using System.Threading.Tasks;
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.ApplicationModel
 {
-	/// <include file="../../docs/Microsoft.Maui.Essentials/Permissions.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Permissions']/Docs" />
 	public static partial class Permissions
 	{
-		public partial class BasePlatformPermission : BasePermission
+		/// <summary>
+		/// Represents the platform-specific abstract base class for all permissions on this platform.
+		/// </summary>
+		public abstract partial class BasePlatformPermission : BasePermission
 		{
+			/// <summary>
+			/// Initializes a new instance of the <see cref="BasePlatformPermission"/> class.
+			/// </summary>
+			protected BasePlatformPermission()
+			{
+			}
+
+			/// <inheritdoc/>
 			public override Task<PermissionStatus> CheckStatusAsync() =>
 				throw ExceptionUtils.NotSupportedOrImplementedException;
 
+			/// <inheritdoc/>
 			public override Task<PermissionStatus> RequestAsync() =>
 				throw ExceptionUtils.NotSupportedOrImplementedException;
 
+			/// <inheritdoc/>
 			public override void EnsureDeclared() =>
 				throw ExceptionUtils.NotSupportedOrImplementedException;
 
+			/// <inheritdoc/>
 			public override bool ShouldShowRationale() =>
 				throw ExceptionUtils.NotSupportedOrImplementedException;
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Battery.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Battery']/Docs" />
 		public partial class Battery : BasePlatformPermission
+		{
+		}
+
+		public partial class Bluetooth : BasePlatformPermission
 		{
 		}
 
@@ -45,7 +61,6 @@ namespace Microsoft.Maui.Essentials
 		{
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Flashlight.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Flashlight']/Docs" />
 		public partial class Flashlight : BasePlatformPermission
 		{
 		}
@@ -98,7 +113,6 @@ namespace Microsoft.Maui.Essentials
 		{
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Sms.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Sms']/Docs" />
 		public partial class Sms : BasePlatformPermission
 		{
 		}

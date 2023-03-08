@@ -1,10 +1,9 @@
-﻿#nullable enable
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Microsoft.Maui.Graphics;
 
 namespace Microsoft.Maui.Controls
 {
-	/// <include file="../../../docs/Microsoft.Maui.Controls/BoxView.xml" path="Type[@FullName='Microsoft.Maui.Controls.BoxView']/Docs" />
+	/// <include file="../../../docs/Microsoft.Maui.Controls/BoxView.xml" path="Type[@FullName='Microsoft.Maui.Controls.BoxView']/Docs/*" />
 	public partial class BoxView : IShapeView, IShape
 	{
 		protected override void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -37,7 +36,7 @@ namespace Microsoft.Maui.Controls
 
 		float IStroke.StrokeMiterLimit => 0;
 
-		PathF IShape.PathForBounds(Rectangle bounds)
+		PathF IShape.PathForBounds(Rect bounds)
 		{
 			var path = new PathF();
 

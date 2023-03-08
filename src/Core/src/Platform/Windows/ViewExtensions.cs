@@ -1,10 +1,11 @@
 #nullable enable
 using System;
-using System.Numerics;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
-using Microsoft.Maui.Essentials;
+using Microsoft.Maui.Devices;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Media;
 using Microsoft.Maui.Primitives;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -18,8 +19,6 @@ namespace Microsoft.Maui.Platform
 {
 	public static partial class ViewExtensions
 	{
-		internal static Page? ContainingPage; // Cache of containing page used for unfocusing
-
 		public static void TryMoveFocus(this FrameworkElement platformView, FocusNavigationDirection direction)
 		{
 			if (platformView?.XamlRoot?.Content is UIElement elem)
@@ -96,15 +95,15 @@ namespace Microsoft.Maui.Platform
 			platformView.Opacity = view.Visibility == Visibility.Hidden ? 0 : view.Opacity;
 		}
 
-		public static void UpdateBackground(this ContentPanel platformView, IBorderStroke border) 
+		public static void UpdateBackground(this ContentPanel platformView, IBorderStroke border)
 		{
-			var hasBorder = border.Shape != null && border.Stroke != null;
+			var hasBorder = border.Shape != null;
 
 			if (hasBorder)
 			{
 				platformView?.UpdateBorderBackground(border);
 			}
-			else if(border is IView v)
+			else if (border is IView v)
 			{
 				platformView?.UpdatePlatformViewBackground(v);
 			}
@@ -115,32 +114,21 @@ namespace Microsoft.Maui.Platform
 			platformView?.UpdatePlatformViewBackground(view);
 		}
 
-		public static WFlowDirection ToPlatform(this FlowDirection flowDirection)
-		{
-			if (flowDirection == FlowDirection.RightToLeft)
-				return WFlowDirection.RightToLeft;
-			else if (flowDirection == FlowDirection.LeftToRight)
-				return WFlowDirection.LeftToRight;
-
-			throw new InvalidOperationException($"Invalid FlowDirection: {flowDirection}");
-		}
-
 		public static void UpdateFlowDirection(this FrameworkElement platformView, IView view)
 		{
 			var flowDirection = view.FlowDirection;
-
-			if (flowDirection == FlowDirection.MatchParent ||
-				view.FlowDirection == FlowDirection.MatchParent)
+			switch (flowDirection)
 			{
-				flowDirection = view?.Handler?.MauiContext?.GetFlowDirection()
-					?? FlowDirection.LeftToRight;
+				case FlowDirection.MatchParent:
+					platformView.ClearValue(FrameworkElement.FlowDirectionProperty);
+					break;
+				case FlowDirection.LeftToRight:
+					platformView.FlowDirection = WFlowDirection.LeftToRight;
+					break;
+				case FlowDirection.RightToLeft:
+					platformView.FlowDirection = WFlowDirection.RightToLeft;
+					break;
 			}
-			if (flowDirection == FlowDirection.MatchParent)
-			{
-				flowDirection = FlowDirection.LeftToRight;
-			}
-
-			platformView.FlowDirection = flowDirection.ToPlatform();
 		}
 
 		public static void UpdateAutomationId(this FrameworkElement platformView, IView view) =>
@@ -150,10 +138,14 @@ namespace Microsoft.Maui.Platform
 		{
 			var semantics = view.Semantics;
 
+			if (view is IPicker picker && string.IsNullOrEmpty(semantics?.Description))
+				AutomationProperties.SetName(platformView, picker.Title);
+			else if (semantics != null)
+				AutomationProperties.SetName(platformView, semantics.Description);
+
 			if (semantics == null)
 				return;
 
-			AutomationProperties.SetName(platformView, semantics.Description);
 			AutomationProperties.SetHelpText(platformView, semantics.Hint);
 			AutomationProperties.SetHeadingLevel(platformView, (UI.Xaml.Automation.Peers.AutomationHeadingLevel)((int)semantics.HeadingLevel));
 		}
@@ -229,9 +221,8 @@ namespace Microsoft.Maui.Platform
 
 		internal static void UpdateBorderBackground(this FrameworkElement platformView, IBorderStroke border)
 		{
-
-			if(border is IView v)
-			(platformView as ContentPanel)?.UpdateBackground(v.Background);
+			if (border is IView view)
+				(platformView as ContentPanel)?.UpdateBackground(view.Background);
 
 			if (platformView is Control control)
 				control.UpdateBackground((Paint?)null);
@@ -253,27 +244,25 @@ namespace Microsoft.Maui.Platform
 				panel.UpdateBackground(view.Background);
 		}
 
-		public static async Task<byte[]?> RenderAsPNG(this IView view)
+		public static async Task UpdateBackgroundImageSourceAsync(this FrameworkElement platformView, IImageSource? imageSource, IImageSourceServiceProvider? provider)
 		{
-			var platformView = view?.ToPlatform();
-			if (platformView == null)
-				return null;
-
-			return await platformView.RenderAsPNG();
+			if (platformView is Control control)
+				await control.UpdateBackgroundImageSourceAsync(imageSource, provider);
+			else if (platformView is Panel panel)
+				await panel.UpdateBackgroundImageSourceAsync(imageSource, provider);
 		}
 
-		public static async Task<byte[]?> RenderAsJPEG(this IView view)
+		public static void UpdateToolTip(this FrameworkElement platformView, ToolTip? tooltip)
 		{
-			var platformView = view?.ToPlatform();
-			if (platformView == null)
-				return null;
-
-			return await platformView.RenderAsJPEG();
+			ToolTipService.SetToolTip(platformView, tooltip?.Content);
 		}
 
-		public static Task<byte[]?> RenderAsPNG(this FrameworkElement view) => view != null ? view.RenderAsPNGAsync() : Task.FromResult<byte[]?>(null);
-
-		public static Task<byte[]?> RenderAsJPEG(this FrameworkElement view) => view != null ? view.RenderAsJPEGAsync() : Task.FromResult<byte[]?>(null);
+		internal static void UpdatePlatformViewBackground(this LayoutPanel layoutPanel, ILayout layout)
+		{
+			// Background and InputTransparent for Windows layouts are heavily intertwined, so setting one
+			// usuall requires setting the other at the same time
+			layoutPanel.UpdateInputTransparent(layout.InputTransparent, layout?.Background?.ToPlatform());
+		}
 
 		internal static Matrix4x4 GetViewTransform(this IView view)
 		{
@@ -286,9 +275,7 @@ namespace Microsoft.Maui.Platform
 		internal static Matrix4x4 GetViewTransform(this FrameworkElement element)
 		{
 			var root = element?.XamlRoot;
-			if (root == null)
-				return new Matrix4x4();
-			var offset = element?.TransformToVisual(root.Content) as MatrixTransform;
+			var offset = element?.TransformToVisual(root?.Content ?? element) as MatrixTransform;
 			if (offset == null)
 				return new Matrix4x4();
 			Matrix matrix = offset.Matrix;
@@ -302,42 +289,42 @@ namespace Microsoft.Maui.Platform
 			};
 		}
 
-		internal static Rectangle GetPlatformViewBounds(this IView view)
+		internal static Rect GetPlatformViewBounds(this IView view)
 		{
 			var platformView = view?.ToPlatform();
 			if (platformView != null)
 				return platformView.GetPlatformViewBounds();
-			return new Rectangle();
+			return new Rect();
 		}
 
-		internal static Rectangle GetPlatformViewBounds(this FrameworkElement platformView)
+		internal static Rect GetPlatformViewBounds(this FrameworkElement platformView)
 		{
 			if (platformView == null)
-				return new Rectangle();
+				return new Rect();
 
 			var root = platformView.XamlRoot;
 			var offset = platformView.TransformToVisual(root.Content) as UI.Xaml.Media.MatrixTransform;
 			if (offset != null)
-				return new Rectangle(offset.Matrix.OffsetX, offset.Matrix.OffsetY, platformView.ActualWidth, platformView.ActualHeight);
+				return new Rect(offset.Matrix.OffsetX, offset.Matrix.OffsetY, platformView.ActualWidth, platformView.ActualHeight);
 
-			return new Rectangle();
+			return new Rect();
 		}
 
-		internal static Graphics.Rectangle GetBoundingBox(this IView view) 
+		internal static Graphics.Rect GetBoundingBox(this IView view)
 			=> view.ToPlatform().GetBoundingBox();
 
-		internal static Graphics.Rectangle GetBoundingBox(this FrameworkElement? platformView)
+		internal static Graphics.Rect GetBoundingBox(this FrameworkElement? platformView)
 		{
 			if (platformView == null)
-				return new Rectangle();
+				return new Rect();
 
 			var rootView = platformView.XamlRoot.Content;
 			if (platformView == rootView)
 			{
 				if (rootView is not FrameworkElement el)
-					return new Rectangle();
+					return new Rect();
 
-				return new Rectangle(0, 0, el.ActualWidth, el.ActualHeight);
+				return new Rect(0, 0, el.ActualWidth, el.ActualHeight);
 			}
 
 
@@ -351,7 +338,7 @@ namespace Microsoft.Maui.Platform
 			var x2 = new[] { topLeft.X, topRight.X, bottomLeft.X, bottomRight.X }.Max();
 			var y1 = new[] { topLeft.Y, topRight.Y, bottomLeft.Y, bottomRight.Y }.Min();
 			var y2 = new[] { topLeft.Y, topRight.Y, bottomLeft.Y, bottomRight.Y }.Max();
-			return new Rectangle(x1, y1, x2 - x1, y2 - y1);
+			return new Rect(x1, y1, x2 - x1, y2 - y1);
 		}
 
 		internal static DependencyObject? GetParent(this FrameworkElement? view)
@@ -372,41 +359,13 @@ namespace Microsoft.Maui.Platform
 			if (control == null || !control.IsEnabled)
 				return;
 
-			// "Unfocusing" doesn't really make sense on Windows; for accessibility reasons,
-			// something always has focus. So forcing the unfocusing of a control would normally 
-			// just move focus to the next control, or leave it on the current control if no other
-			// focus targets are available. This is what happens if you use the "disable/enable"
-			// hack. What we *can* do is set the focus to the Page which contains Control;
-			// this will cause Control to lose focus without shifting focus to, say, the next Entry 
+			var isTabStop = control.IsTabStop;
+			control.IsTabStop = false;
+			control.IsEnabled = false;
+			control.IsEnabled = true;
+			control.IsTabStop = isTabStop;
+		}
 
-			if (ContainingPage == null)
-			{
-				// Work our way up the tree to find the containing Page
-				DependencyObject parent = control;
-
-				while (parent != null && parent is not Page)
-				{
-					parent = VisualTreeHelper.GetParent(parent);
-				}
-
-				ContainingPage = parent as Page;
-			}
-
-			if (ContainingPage != null)
-			{
-				// Cache the tabstop setting
-				var wasTabStop = ContainingPage.IsTabStop;
-
-				// Controls can only get focus if they're a tabstop
-				ContainingPage.IsTabStop = true;
-				ContainingPage.Focus(FocusState.Programmatic);
-
-				// Restore the tabstop setting; that may cause the Page to lose focus,
-				// but it won't restore the focus to Control
-				ContainingPage.IsTabStop = wasTabStop;
-			}
-    }
-    
 		internal static IWindow? GetHostedWindow(this IView? view)
 			=> GetHostedWindow(view?.Handler?.PlatformView as FrameworkElement);
 
@@ -419,7 +378,7 @@ namespace Microsoft.Maui.Platform
 				return null;
 
 			var windows = WindowExtensions.GetWindows();
-			foreach(var window in windows)
+			foreach (var window in windows)
 			{
 				if (window.Handler?.PlatformView is Microsoft.UI.Xaml.Window win)
 				{
@@ -429,6 +388,19 @@ namespace Microsoft.Maui.Platform
 			}
 
 			return null;
+		}
+
+		public static void UpdateInputTransparent(this FrameworkElement nativeView, IViewHandler handler, IView view)
+		{
+			if (nativeView is UIElement element)
+			{
+				element.IsHitTestVisible = !view.InputTransparent;
+			}
+		}
+
+		public static void UpdateInputTransparent(this LayoutPanel layoutPanel, ILayoutHandler handler, ILayout layout)
+		{
+			// Nothing to do yet, but we might need to adjust the wrapper view 
 		}
 	}
 }

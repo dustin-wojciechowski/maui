@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,9 +17,16 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		public IItemsViewSource ItemsSource { get; protected set; }
 		public TItemsView ItemsView { get; }
+
+		// ItemsViewLayout provides an accessor to the typed UICollectionViewLayout. It's also important to note that the
+		// initial UICollectionViewLayout which is passed in to the ItemsViewController (and accessed via the Layout property)
+		// _does not_ get updated when the layout is updated for the CollectionView. That property only refers to the
+		// original layout. So it's unlikely that you would ever want to use .Layout; use .ItemsViewLayout instead.
+		// See https://developer.apple.com/documentation/uikit/uicollectionviewcontroller/1623980-collectionviewlayout
 		protected ItemsViewLayout ItemsViewLayout { get; set; }
+
 		bool _initialized;
-		bool _isEmpty;
+		bool _isEmpty = true;
 		bool _emptyViewDisplayed;
 		bool _disposed;
 
@@ -110,7 +118,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			if (_isEmpty)
 			{
-				_measurementCells.Clear();
+				_measurementCells?.Clear();
 				ItemsViewLayout?.ClearCellSizeCache();
 			}
 
@@ -134,8 +142,14 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			ItemsSource = CreateItemsViewSource();
 
-			if (!PlatformVersion.IsAtLeast(11))
+			if (!(OperatingSystem.IsIOSVersionAtLeast(11) || OperatingSystem.IsMacCatalystVersionAtLeast(11)
+#if TVOS
+				|| OperatingSystem.IsTvOSVersionAtLeast(11)
+#endif
+			))
+			{
 				AutomaticallyAdjustsScrollViewInsets = false;
+			}
 			else
 			{
 				// We set this property to keep iOS from trying to be helpful about insetting all the 
@@ -209,8 +223,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		public virtual void UpdateItemsSource()
 		{
-			_measurementCells.Clear();
+			_measurementCells?.Clear();
 			ItemsViewLayout?.ClearCellSizeCache();
+			ItemsSource?.Dispose();
 			ItemsSource = CreateItemsViewSource();
 			CollectionView.ReloadData();
 			CollectionView.CollectionViewLayout.InvalidateLayout();
@@ -252,7 +267,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			var bindingContext = ItemsSource[indexPath];
 
 			// If we've already created a cell for this index path (for measurement), re-use the content
-			if (_measurementCells.TryGetValue(bindingContext, out TemplatedCell measurementCell))
+			if (_measurementCells != null && _measurementCells.TryGetValue(bindingContext, out TemplatedCell measurementCell))
 			{
 				_measurementCells.Remove(bindingContext);
 				measurementCell.ContentSizeChanged -= CellContentSizeChanged;
@@ -296,7 +311,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			{
 				if (cell == visibleCells[n])
 				{
-					Layout?.InvalidateLayout();
+					ItemsViewLayout?.InvalidateLayout();
 					return;
 				}
 			}
@@ -338,7 +353,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		UICollectionViewCell GetPrototype()
 		{
-			if (ItemsSource.ItemCount == 0)
+			if (ItemsSource == null || ItemsSource.ItemCount == 0)
 			{
 				return null;
 			}
@@ -385,12 +400,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			if (IsHorizontal)
 			{
 				var request = formsElement.Measure(double.PositiveInfinity, CollectionView.Frame.Height, MeasureFlags.IncludeMargins);
-				Controls.Compatibility.Layout.LayoutChildIntoBoundingRegion(formsElement, new Rectangle(0, 0, request.Request.Width, CollectionView.Frame.Height));
+				Controls.Compatibility.Layout.LayoutChildIntoBoundingRegion(formsElement, new Rect(0, 0, request.Request.Width, CollectionView.Frame.Height));
 			}
 			else
 			{
 				var request = formsElement.Measure(CollectionView.Frame.Width, double.PositiveInfinity, MeasureFlags.IncludeMargins);
-				Controls.Compatibility.Layout.LayoutChildIntoBoundingRegion(formsElement, new Rectangle(0, 0, CollectionView.Frame.Width, request.Request.Height));
+				Controls.Compatibility.Layout.LayoutChildIntoBoundingRegion(formsElement, new Rect(0, 0, CollectionView.Frame.Width, request.Request.Height));
 			}
 		}
 
@@ -472,7 +487,14 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 				return;
 			}
 
-			if (CollectionView.EffectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirection.RightToLeft)
+			bool isRtl;
+
+			if (OperatingSystem.IsIOSVersionAtLeast(10) || OperatingSystem.IsTvOSVersionAtLeast(10))
+				isRtl = CollectionView.EffectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirection.RightToLeft;
+			else
+				isRtl = CollectionView.SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft;
+
+			if (isRtl)
 			{
 				if (_emptyUIView.Transform.A == -1)
 				{
@@ -592,7 +614,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			UpdateTemplatedCell(templatedCell, indexPath);
 
 			// Keep this cell around, we can transfer the contents to the actual cell when the UICollectionView creates it
-			_measurementCells[ItemsSource[indexPath]] = templatedCell;
+			if (_measurementCells != null)
+				_measurementCells[ItemsSource[indexPath]] = templatedCell;
 
 			return templatedCell;
 		}
@@ -623,6 +646,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			{
 				if (CollectionView.Hidden)
 				{
+					CollectionView.ReloadData();
 					CollectionView.Hidden = false;
 					Layout.InvalidateLayout();
 					CollectionView.LayoutIfNeeded();

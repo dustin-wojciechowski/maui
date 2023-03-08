@@ -1,3 +1,8 @@
+using System;
+using Microsoft.Maui.Graphics;
+using RectangleF = CoreGraphics.CGRect;
+using SizeF = CoreGraphics.CGSize;
+
 namespace Microsoft.Maui.Handlers
 {
 	public partial class LabelHandler : ViewHandler<ILabel, MauiLabel>
@@ -38,17 +43,9 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateHorizontalTextAlignment(label);
 		}
 
-		[MissingMapper]
-		public static void MapVerticalTextAlignment(ILabelHandler handler, ILabel label) { }
-
-		public static void MapLineBreakMode(ILabelHandler handler, ILabel label)
+		public static void MapVerticalTextAlignment(ILabelHandler handler, ILabel label)
 		{
-			handler.PlatformView?.UpdateLineBreakMode(label);
-		}
-
-		public static void MapMaxLines(ILabelHandler handler, ILabel label)
-		{
-			handler.PlatformView?.UpdateMaxLines(label);
+			handler.PlatformView?.UpdateVerticalTextAlignment(label);
 		}
 
 		public static void MapPadding(ILabelHandler handler, ILabel label)

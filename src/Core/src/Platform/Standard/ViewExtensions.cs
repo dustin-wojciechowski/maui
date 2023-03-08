@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Microsoft.Maui.Platform
 {
 	public static partial class ViewExtensions
@@ -9,6 +11,9 @@ namespace Microsoft.Maui.Platform
 		public static void Unfocus(this object platformView, IView view) { }
 
 		public static void UpdateVisibility(this object platformView, IView view) { }
+
+		public static Task UpdateBackgroundImageSourceAsync(this object platformView, IImageSource? imageSource, IImageSourceServiceProvider? provider)
+			=> Task.CompletedTask;
 
 		public static void UpdateBackground(this object platformView, IView view) { }
 
@@ -58,17 +63,11 @@ namespace Microsoft.Maui.Platform
 
 		public static void UpdateMaximumWidth(this object platformView, IView view) { }
 
-		public static System.Threading.Tasks.Task<byte[]?> RenderAsPNG(this IView view)
-			=> System.Threading.Tasks.Task.FromResult<byte[]?>(null);
-
-		public static System.Threading.Tasks.Task<byte[]?> RenderAsJPEG(this IView view)
-			=> System.Threading.Tasks.Task.FromResult<byte[]?>(null);
-
-		internal static Graphics.Rectangle GetPlatformViewBounds(this IView view) => view.Frame;
+		internal static Graphics.Rect GetPlatformViewBounds(this IView view) => view.Frame;
 
 		internal static System.Numerics.Matrix4x4 GetViewTransform(this IView view) => new System.Numerics.Matrix4x4();
 
-		internal static Graphics.Rectangle GetBoundingBox(this IView view) => view.Frame;
+		internal static Graphics.Rect GetBoundingBox(this IView view) => view.Frame;
 
 		internal static object? GetParent(this object? view)
 		{
@@ -77,5 +76,7 @@ namespace Microsoft.Maui.Platform
 
 		internal static IWindow? GetHostedWindow(this IView? view)
 			=> null;
+
+		public static void UpdateInputTransparent(this object nativeView, IViewHandler handler, IView view) { }
 	}
 }

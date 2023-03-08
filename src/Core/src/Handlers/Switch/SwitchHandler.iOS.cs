@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Maui.Graphics;
 using ObjCRuntime;
 using UIKit;
 using RectangleF = CoreGraphics.CGRect;
@@ -7,9 +8,11 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class SwitchHandler : ViewHandler<ISwitch, UISwitch>
 	{
-		static UIColor? DefaultOnTrackColor;
-		static UIColor? DefaultOffTrackColor;
-		static UIColor? DefaultThumbColor;
+		// the UISwitch control becomes inaccessible if it grows to a width > 101
+		// An issue has been logged with Apple
+		// This ensures that the UISwitch remains the natural size that iOS expects
+		// But the container can be used for setting BGColors and other features.
+		public override bool NeedsContainer => true;
 
 		protected override UISwitch CreatePlatformView()
 		{
@@ -30,13 +33,6 @@ namespace Microsoft.Maui.Handlers
 			platformView.ValueChanged -= OnControlValueChanged;
 		}
 
-		void SetupDefaults(UISwitch platformView)
-		{
-			DefaultOnTrackColor = UISwitch.Appearance.OnTintColor;
-			DefaultOffTrackColor = platformView.GetOffTrackColor();
-			DefaultThumbColor = UISwitch.Appearance.ThumbTintColor;
-		}
-
 		public static void MapIsOn(ISwitchHandler handler, ISwitch view)
 		{
 			handler.PlatformView?.UpdateIsOn(view);
@@ -44,21 +40,20 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapTrackColor(ISwitchHandler handler, ISwitch view)
 		{
-			handler.PlatformView?.UpdateTrackColor(view, DefaultOnTrackColor, DefaultOffTrackColor);
+			handler.PlatformView?.UpdateTrackColor(view);
 		}
 
 		public static void MapThumbColor(ISwitchHandler handler, ISwitch view)
 		{
-			handler.PlatformView?.UpdateThumbColor(view, DefaultThumbColor);
+			handler.PlatformView?.UpdateThumbColor(view);
 		}
 
 		void OnControlValueChanged(object? sender, EventArgs e)
 		{
-			if (VirtualView == null)
+			if (VirtualView is null || PlatformView is null || VirtualView.IsOn == PlatformView.On)
 				return;
 
-			if (PlatformView != null)
-				VirtualView.IsOn = PlatformView.On;
+			VirtualView.IsOn = PlatformView.On;
 		}
 	}
 }

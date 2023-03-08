@@ -1,13 +1,10 @@
 ﻿using System;
-using ObjCRuntime;
-using UIKit;
 
 namespace Microsoft.Maui.Handlers
 {
+#if IOS && !MACCATALYST
 	public partial class TimePickerHandler : ViewHandler<ITimePicker, MauiTimePicker>
 	{
-		static UIColor? DefaultTextColor;
-
 		protected override MauiTimePicker CreatePlatformView()
 		{
 			return new MauiTimePicker(() =>
@@ -16,6 +13,8 @@ namespace Microsoft.Maui.Handlers
 				PlatformView?.ResignFirstResponder();
 			});
 		}
+
+		internal bool UpdateImmediately { get; set; }
 
 		protected override void ConnectHandler(MauiTimePicker platformView)
 		{
@@ -26,6 +25,10 @@ namespace Microsoft.Maui.Handlers
 				platformView.EditingDidBegin += OnStarted;
 				platformView.EditingDidEnd += OnEnded;
 				platformView.ValueChanged += OnValueChanged;
+				platformView.DateSelected += OnDateSelected;
+				platformView.Picker.ValueChanged += OnValueChanged;
+
+				platformView.UpdateTime(VirtualView.Time);
 			}
 		}
 
@@ -36,26 +39,25 @@ namespace Microsoft.Maui.Handlers
 			if (platformView != null)
 			{
 				platformView.RemoveFromSuperview();
+
 				platformView.EditingDidBegin -= OnStarted;
 				platformView.EditingDidEnd -= OnEnded;
 				platformView.ValueChanged -= OnValueChanged;
+				platformView.DateSelected -= OnDateSelected;
+				platformView.Picker.ValueChanged -= OnValueChanged;
+
 				platformView.Dispose();
 			}
 		}
 
-		void SetupDefaults(MauiTimePicker platformView)
-		{
-			DefaultTextColor = platformView.TextColor;
-		}
-
 		public static void MapFormat(ITimePickerHandler handler, ITimePicker timePicker)
 		{
-			handler.PlatformView?.UpdateFormat(timePicker);
+			handler.PlatformView?.UpdateFormat(timePicker, handler.PlatformView?.Picker);
 		}
 
 		public static void MapTime(ITimePickerHandler handler, ITimePicker timePicker)
 		{
-			handler.PlatformView?.UpdateTime(timePicker);
+			handler.PlatformView?.UpdateTime(timePicker, handler.PlatformView?.Picker);
 		}
 
 		public static void MapCharacterSpacing(ITimePickerHandler handler, ITimePicker timePicker)
@@ -72,7 +74,13 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapTextColor(ITimePickerHandler handler, ITimePicker timePicker)
 		{
-			handler.PlatformView?.UpdateTextColor(timePicker, DefaultTextColor);
+			handler.PlatformView?.UpdateTextColor(timePicker);
+		}
+
+		public static void MapFlowDirection(TimePickerHandler handler, ITimePicker timePicker)
+		{
+			handler.PlatformView?.UpdateFlowDirection(timePicker);
+			handler.PlatformView?.UpdateTextAlignment(timePicker);
 		}
 
 		void OnStarted(object? sender, EventArgs eventArgs)
@@ -89,6 +97,12 @@ namespace Microsoft.Maui.Handlers
 
 		void OnValueChanged(object? sender, EventArgs e)
 		{
+			if (UpdateImmediately)  // Platform Specific
+				SetVirtualViewTime();
+		}
+
+		void OnDateSelected(object? sender, EventArgs e)
+		{
 			SetVirtualViewTime();
 		}
 
@@ -97,7 +111,9 @@ namespace Microsoft.Maui.Handlers
 			if (VirtualView == null || PlatformView == null)
 				return;
 
-			VirtualView.Time = PlatformView.Date.ToDateTime() - new DateTime(1, 1, 1);
+			var datetime = PlatformView.Date.ToDateTime();
+			VirtualView.Time = new TimeSpan(datetime.Hour, datetime.Minute, 0);
 		}
 	}
+#endif
 }

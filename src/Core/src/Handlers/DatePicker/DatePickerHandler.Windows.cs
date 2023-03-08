@@ -6,8 +6,6 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class DatePickerHandler : ViewHandler<IDatePicker, CalendarDatePicker>
 	{
-		WBrush? _defaultForeground;
-
 		protected override CalendarDatePicker CreatePlatformView() => new CalendarDatePicker();
 
 		protected override void ConnectHandler(CalendarDatePicker platformView)
@@ -20,47 +18,41 @@ namespace Microsoft.Maui.Handlers
 			platformView.DateChanged -= DateChanged;
 		}
 
-		void SetupDefaults(CalendarDatePicker platformView)
-		{
-			_defaultForeground = platformView.Foreground;
-		}
-
 		public static void MapFormat(IDatePickerHandler handler, IDatePicker datePicker)
 		{
-			handler.PlatformView?.UpdateDate(datePicker);
+			handler.PlatformView.UpdateDate(datePicker);
 		}
 
 		public static void MapDate(IDatePickerHandler handler, IDatePicker datePicker)
 		{
-			handler.PlatformView?.UpdateDate(datePicker);
+			handler.PlatformView.UpdateDate(datePicker);
 		}
 
 		public static void MapMinimumDate(IDatePickerHandler handler, IDatePicker datePicker)
 		{
-			handler.PlatformView?.UpdateMinimumDate(datePicker);
+			handler.PlatformView.UpdateMinimumDate(datePicker);
 		}
 
 		public static void MapMaximumDate(IDatePickerHandler handler, IDatePicker datePicker)
 		{
-			handler.PlatformView?.UpdateMaximumDate(datePicker);
+			handler.PlatformView.UpdateMaximumDate(datePicker);
 		}
 
 		public static void MapCharacterSpacing(IDatePickerHandler handler, IDatePicker datePicker)
 		{
-			handler.PlatformView?.UpdateCharacterSpacing(datePicker);
+			handler.PlatformView.UpdateCharacterSpacing(datePicker);
 		}
 
 		public static void MapFont(IDatePickerHandler handler, IDatePicker datePicker)
 		{
 			var fontManager = handler.GetRequiredService<IFontManager>();
 
-			handler.PlatformView?.UpdateFont(datePicker, fontManager);
+			handler.PlatformView.UpdateFont(datePicker, fontManager);
 		}
 
 		public static void MapTextColor(IDatePickerHandler handler, IDatePicker datePicker)
 		{
-			if (handler is DatePickerHandler platformHandler)
-				handler.PlatformView?.UpdateTextColor(datePicker, platformHandler._defaultForeground);
+			handler.PlatformView.UpdateTextColor(datePicker);
 		}
 
 		private void DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
@@ -87,6 +79,12 @@ namespace Microsoft.Maui.Handlers
 			//}
 
 			VirtualView.Date = args.NewDate.Value.Date;
+		}
+
+		// TODO NET8 add to public API
+		internal static void MapBackground(IDatePickerHandler handler, IDatePicker datePicker)
+		{
+			handler.PlatformView?.UpdateBackground(datePicker);
 		}
 	}
 }

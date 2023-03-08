@@ -18,23 +18,12 @@ namespace Microsoft.Maui.Platform
 
 		public static void UpdateTextColor(this MauiDatePicker platformDatePicker, IDatePicker datePicker)
 		{
-			platformDatePicker.UpdateTextColor(datePicker, null);
-		}
-
-		public static void UpdateTextColor(this MauiDatePicker platformDatePicker, IDatePicker datePicker, ColorStateList? defaultTextColor)
-		{
 			var textColor = datePicker.TextColor;
 
-			if (textColor == null)
+			if (textColor != null)
 			{
-				if (defaultTextColor != null)
-					platformDatePicker.SetTextColor(defaultTextColor);
-			}
-			else
-			{
-				var androidColor = textColor.ToPlatform();
-				if (!platformDatePicker.TextColors.IsOneColor(ColorStates.EditText, androidColor))
-					platformDatePicker.SetTextColor(ColorStateListExtensions.CreateEditText(androidColor));
+				if (PlatformInterop.CreateEditTextColorStateList(platformDatePicker.TextColors, textColor.ToPlatform()) is ColorStateList c)
+					platformDatePicker.SetTextColor(c);
 			}
 		}
 

@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -181,7 +182,6 @@ namespace Microsoft.Maui.Controls
 
 			Uri request = ConvertToStandardFormat(shell, uri);
 
-
 			var possibleRouteMatches = GenerateRoutePaths(shell, request, uri, enableRelativeShellRoutes);
 
 			if (possibleRouteMatches.Count == 0)
@@ -214,7 +214,7 @@ namespace Microsoft.Maui.Controls
 			RequestDefinition definition =
 				new RequestDefinition(theWinningRoute, shell);
 
-			ShellNavigationRequest navigationRequest = new ShellNavigationRequest(definition, whatDoIDo, request.Query, request.Fragment);
+			var navigationRequest = new ShellNavigationRequest(definition, whatDoIDo, request.Query, request.Fragment);
 
 			return navigationRequest;
 		}
@@ -228,10 +228,6 @@ namespace Microsoft.Maui.Controls
 		internal static List<RouteRequestBuilder> GenerateRoutePaths(Shell shell, Uri request, Uri originalRequest, bool enableRelativeShellRoutes)
 		{
 			var routeKeys = Routing.GetRouteKeys();
-			for (int i = 0; i < routeKeys.Length; i++)
-			{
-				routeKeys[i] = FormatUri(routeKeys[i]);
-			}
 
 			request = FormatUri(request, shell);
 			originalRequest = FormatUri(originalRequest, shell);
@@ -247,13 +243,13 @@ namespace Microsoft.Maui.Controls
 				!originalRequest.OriginalString.StartsWith("//", StringComparison.Ordinal))
 				relativeMatch = true;
 
-			var segments = RetrievePaths(localPath);
+			var segments = new List<string>(RetrievePaths(localPath));
 
 			var depthStart = 0;
 
 			if (segments[0] == shell?.Route)
 			{
-				segments = segments.Skip(1).ToArray();
+				segments.RemoveAt(0);
 				depthStart = 1;
 			}
 			else
@@ -321,24 +317,23 @@ namespace Microsoft.Maui.Controls
 				{
 					if (routeKey == originalRequest.OriginalString)
 					{
-						var builder = new RouteRequestBuilder(routeKey, routeKey, null, new string[] { routeKey });
+						var builder = new RouteRequestBuilder(routeKey, routeKey, null, new List<string>(1) { routeKey });
 						return new List<RouteRequestBuilder> { builder };
 					}
 				}
 
 				if (!relativeMatch)
 				{
-					for (int i = 0; i < routeKeys.Length; i++)
+					foreach (var route in routeKeys)
 					{
-						var route = routeKeys[i];
 						var uri = ConvertToStandardFormat(shell, CreateUri(route));
 						if (uri.Equals(request))
 						{
-							#if NETSTANDARD2_0
+#if NETSTANDARD2_0
 							var replaced = originalRequest.OriginalString.Replace("//", "");
-							#else
+#else
 							var replaced = originalRequest.OriginalString.Replace("//", "", StringComparison.Ordinal);
-							#endif
+#endif
 							throw new Exception($"Global routes currently cannot be the only page on the stack, so absolute routing to global routes is not supported. For now, just navigate to: {replaced}");
 						}
 					}
@@ -349,8 +344,8 @@ namespace Microsoft.Maui.Controls
 
 		static List<RouteRequestBuilder> ProcessRelativeRoute(
 			Shell shell,
-			string[] routeKeys,
-			string[] segments,
+			HashSet<string> routeKeys,
+			List<string> segments,
 			bool enableRelativeShellRoutes,
 			Uri originalRequest)
 		{
@@ -431,20 +426,20 @@ namespace Microsoft.Maui.Controls
 		}
 
 		static List<RouteRequestBuilder> SearchForGlobalRoutes(
-			string[] segments,
+			List<string> segments,
 			Uri startingFrom,
 			NodeLocation currentLocation,
-			string[] routeKeys)
+			HashSet<string> routeKeys)
 		{
 			List<RouteRequestBuilder> pureGlobalRoutesMatch = new List<RouteRequestBuilder>();
 			string newPath = String.Join(_pathSeparator, segments);
 			var currentSegments = RetrievePaths(startingFrom.OriginalString);
-			var newSegments = CollapsePath(newPath, currentSegments, true).ToArray();
+			var newSegments = CollapsePath(newPath, currentSegments, true);
 			List<string> fullRouteWithNewSegments = new List<string>(currentSegments);
 			fullRouteWithNewSegments.AddRange(newSegments);
 
 			// This is used to calculate if the global route matches
-			RouteRequestBuilder routeRequestBuilder = new RouteRequestBuilder(fullRouteWithNewSegments.ToArray());
+			RouteRequestBuilder routeRequestBuilder = new RouteRequestBuilder(fullRouteWithNewSegments);
 
 			// add shell element routes
 			routeRequestBuilder.AddMatch(currentLocation);
@@ -532,7 +527,7 @@ namespace Microsoft.Maui.Controls
 			return paths;
 		}
 
-		static bool FindAndAddSegmentMatch(RouteRequestBuilder possibleRoutePath, string[] routeKeys)
+		static bool FindAndAddSegmentMatch(RouteRequestBuilder possibleRoutePath, HashSet<string> routeKeys)
 		{
 			// First search by collapsing global routes if user is registering routes like "route1/route2/route3"
 			foreach (var routeKey in routeKeys)
@@ -609,7 +604,7 @@ namespace Microsoft.Maui.Controls
 			return false;
 		}
 
-		internal static void ExpandOutGlobalRoutes(List<RouteRequestBuilder> possibleRoutePaths, string[] routeKeys)
+		internal static void ExpandOutGlobalRoutes(List<RouteRequestBuilder> possibleRoutePaths, HashSet<string> routeKeys)
 		{
 			foreach (var possibleRoutePath in possibleRoutePaths)
 			{
@@ -858,7 +853,7 @@ namespace Microsoft.Maui.Controls
 		static void SearchPath(
 			object node,
 			RouteRequestBuilder currentMatchedPath,
-			string[] segments,
+			List<string> segments,
 			List<RouteRequestBuilder> possibleRoutePaths,
 			int depthToStart,
 			int myDepth = -1,
@@ -961,7 +956,7 @@ namespace Microsoft.Maui.Controls
 					results = section.GetItems();
 					break;
 				case ShellContent content:
-					results = new object[0];
+					results = Array.Empty<object>();
 					break;
 				case GlobalRouteItem routeItem:
 					results = routeItem.Items;
@@ -979,9 +974,8 @@ namespace Microsoft.Maui.Controls
 
 			var keys = Routing.GetRouteKeys();
 			string route = GetRoute(node);
-			for (var i = 0; i < keys.Length; i++)
+			foreach (var key in keys)
 			{
-				var key = FormatUri(keys[i]);
 				if (key.StartsWith(_pathSeparator, StringComparison.Ordinal) && !(node is Shell))
 					continue;
 
@@ -1011,7 +1005,7 @@ namespace Microsoft.Maui.Controls
 					var segments = RetrievePaths(_path).ToList().Skip(1).ToList();
 
 					if (segments.Count == 0)
-						return new object[0];
+						return Array.Empty<object>();
 
 					var route = Routing.FormatRoute(segments);
 

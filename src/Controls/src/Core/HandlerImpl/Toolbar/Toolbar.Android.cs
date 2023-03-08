@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Android.Content;
@@ -9,13 +7,15 @@ using Android.Views;
 using Google.Android.Material.AppBar;
 using Microsoft.Maui.Controls.Platform;
 using Microsoft.Maui.Handlers;
+using AToolbar = AndroidX.AppCompat.Widget.Toolbar;
+using LP = Android.Views.ViewGroup.LayoutParams;
 
 namespace Microsoft.Maui.Controls
 {
 	public partial class Toolbar
 	{
-		IViewHandler? _nativeTitleViewHandler;
-		Container? _nativeTitleView;
+		IViewHandler? _platformTitleViewHandler;
+		Container? _platformTitleView;
 		List<IMenuItem> _currentMenuItems = new List<IMenuItem>();
 		List<ToolbarItem> _currentToolbarItems = new List<ToolbarItem>();
 
@@ -23,6 +23,22 @@ namespace Microsoft.Maui.Controls
 			Handler?.MauiContext?.GetNavigationRootManager();
 
 		MaterialToolbar PlatformView => Handler?.PlatformView as MaterialToolbar ?? throw new InvalidOperationException("Native View not set");
+
+		partial void OnHandlerChanging(IElementHandler oldHandler, IElementHandler newHandler)
+		{
+			if (newHandler == null)
+			{
+				if (_platformTitleView != null)
+					_platformTitleView.Child = null;
+
+				_platformTitleViewHandler?.DisconnectHandler();
+
+				Controls.Platform.ToolbarExtensions.DisposeMenuItems(
+					oldHandler?.PlatformView as AToolbar,
+					ToolbarItems,
+					OnToolbarItemPropertyChanged);
+			}
+		}
 
 		void OnToolbarItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
 		{
@@ -48,7 +64,7 @@ namespace Microsoft.Maui.Controls
 			if (_currentMenuItems == null)
 				return;
 
-			PlatformView.UpdateMenuItems(ToolbarItems, MauiContext, null, OnToolbarItemPropertyChanged, _currentMenuItems, _currentToolbarItems, UpdateMenuItemIcon);
+			PlatformView.UpdateMenuItems(ToolbarItems, MauiContext, BarTextColor, OnToolbarItemPropertyChanged, _currentMenuItems, _currentToolbarItems, UpdateMenuItemIcon);
 		}
 
 		void UpdateTitleView()
@@ -57,96 +73,133 @@ namespace Microsoft.Maui.Controls
 			_ = MauiContext.Context ?? throw new ArgumentNullException(nameof(MauiContext.Context));
 
 			VisualElement titleView = TitleView;
-			if (_nativeTitleViewHandler != null)
+			if (_platformTitleViewHandler != null)
 			{
-				var reflectableType = _nativeTitleViewHandler as System.Reflection.IReflectableType;
-				var rendererType = reflectableType != null ? reflectableType.GetTypeInfo().AsType() : _nativeTitleViewHandler.GetType();
-				if (titleView == null || Internals.Registrar.Registered.GetHandlerTypeForObject(titleView) != rendererType)
+				Type? rendererType = null;
+
+				if (titleView != null)
+					rendererType = MauiContext.Handlers.GetHandlerType(titleView.GetType());
+
+				if (titleView == null || titleView.Handler?.GetType() != rendererType)
 				{
-					if (_nativeTitleView != null)
-						_nativeTitleView.Child = null;
+					if (_platformTitleView != null)
+						_platformTitleView.Child = null;
 
-					if (_nativeTitleViewHandler?.VirtualView != null)
-						_nativeTitleViewHandler.VirtualView.Handler = null;
+					if (_platformTitleViewHandler?.VirtualView != null)
+						_platformTitleViewHandler.VirtualView.Handler = null;
 
-					_nativeTitleViewHandler = null;
+					_platformTitleViewHandler = null;
 				}
 			}
 
 			if (titleView == null)
 				return;
 
-			if (_nativeTitleViewHandler != null)
-				_nativeTitleViewHandler.SetVirtualView(titleView);
+			if (_platformTitleViewHandler != null)
+				_platformTitleViewHandler.SetVirtualView(titleView);
 			else
 			{
 				titleView.ToPlatform(MauiContext);
-				_nativeTitleViewHandler = titleView.Handler;
+				_platformTitleViewHandler = titleView.Handler;
 
-				if (_nativeTitleView == null)
+				if (_platformTitleView == null)
 				{
-					_nativeTitleView = new Container(MauiContext.Context);
-					PlatformView.AddView(_nativeTitleView);
+					var context = MauiContext.Context!;
+					_platformTitleView = new Container(context);
+					var layoutParams = new MaterialToolbar.LayoutParams(LP.MatchParent, LP.MatchParent);
+					_platformTitleView.LayoutParameters = layoutParams;
+					PlatformView.AddView(_platformTitleView);
 				}
 
-				_nativeTitleView.Child = (IPlatformViewHandler?)_nativeTitleViewHandler;
+				_platformTitleView.Child = (IPlatformViewHandler?)_platformTitleViewHandler;
 			}
 		}
 
-		public static void MapBarTextColor(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapBarTextColor(ToolbarHandler arg1, Toolbar arg2) =>
+			MapBarTextColor((IToolbarHandler)arg1, arg2);
+
+		public static void MapBarBackground(ToolbarHandler arg1, Toolbar arg2) =>
+			MapBarBackground((IToolbarHandler)arg1, arg2);
+
+		public static void MapBackButtonTitle(ToolbarHandler arg1, Toolbar arg2) =>
+			MapBackButtonTitle((IToolbarHandler)arg1, arg2);
+
+		public static void MapToolbarItems(ToolbarHandler arg1, Toolbar arg2) =>
+			MapToolbarItems((IToolbarHandler)arg1, arg2);
+
+		public static void MapTitle(ToolbarHandler arg1, Toolbar arg2) =>
+			MapTitle((IToolbarHandler)arg1, arg2);
+
+		public static void MapIconColor(ToolbarHandler arg1, Toolbar arg2) =>
+			MapIconColor((IToolbarHandler)arg1, arg2);
+
+		public static void MapTitleView(ToolbarHandler arg1, Toolbar arg2) =>
+			MapTitleView((IToolbarHandler)arg1, arg2);
+
+		public static void MapTitleIcon(ToolbarHandler arg1, Toolbar arg2) =>
+			MapTitleIcon((IToolbarHandler)arg1, arg2);
+
+		public static void MapBackButtonVisible(ToolbarHandler arg1, Toolbar arg2) =>
+			MapBackButtonVisible((IToolbarHandler)arg1, arg2);
+
+		public static void MapIsVisible(ToolbarHandler arg1, Toolbar arg2) =>
+			MapIsVisible((IToolbarHandler)arg1, arg2);
+
+
+
+		public static void MapBarTextColor(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg1.PlatformView.UpdateBarTextColor(arg2);
 		}
 
-		public static void MapBarBackground(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapBarBackground(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg1.PlatformView.UpdateBarBackground(arg2);
 		}
 
-		public static void MapBarBackgroundColor(ToolbarHandler arg1, Toolbar arg2)
-		{
-			arg1.PlatformView.UpdateBarBackgroundColor(arg2);
-		}
-
-		public static void MapBackButtonTitle(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapBackButtonTitle(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg1.PlatformView.UpdateBackButton(arg2);
 		}
 
-		public static void MapToolbarItems(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapToolbarItems(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg2.UpdateMenu();
 		}
 
-		public static void MapTitle(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapTitle(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg1.PlatformView.UpdateTitle(arg2);
 		}
 
-		public static void MapIconColor(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapIconColor(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg1.PlatformView.UpdateIconColor(arg2);
 		}
 
-		public static void MapTitleView(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapTitleView(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg2.UpdateTitleView();
 		}
 
-		public static void MapTitleIcon(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapTitleIcon(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg1.PlatformView.UpdateTitleIcon(arg2);
 		}
 
-		public static void MapBackButtonVisible(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapBackButtonVisible(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg1.PlatformView.UpdateBackButton(arg2);
 		}
 
-		public static void MapIsVisible(ToolbarHandler arg1, Toolbar arg2)
+		public static void MapIsVisible(IToolbarHandler arg1, Toolbar arg2)
 		{
 			arg1.PlatformView.UpdateIsVisible(arg2);
 		}
+
+
+
+
 
 		internal class Container : ViewGroup
 		{
@@ -160,22 +213,24 @@ namespace Microsoft.Maui.Controls
 			{
 				set
 				{
-					if (_child != null)
-						RemoveView(_child.PlatformView);
+					_child?.DisconnectHandler();
+					RemoveAllViews();
 
 					_child = value;
 
-					if (value != null)
-						AddView(value.PlatformView);
+					if (_child != null)
+					{
+						var platformView = _child.ToPlatform();
+						platformView.RemoveFromParent();
+						if (platformView != null)
+							AddView(platformView);
+					}
 				}
 			}
 
 			protected override void OnLayout(bool changed, int l, int t, int r, int b)
 			{
-				if (_child?.PlatformView == null)
-					return;
-
-				_child.PlatformView.Layout(l, t, r, b);
+				_child?.LayoutVirtualView(l, t, r, b);
 			}
 
 			protected override void OnMeasure(int widthMeasureSpec, int heightMeasureSpec)
@@ -186,8 +241,8 @@ namespace Microsoft.Maui.Controls
 					return;
 				}
 
-				_child.PlatformView.Measure(widthMeasureSpec, heightMeasureSpec);
-				SetMeasuredDimension(_child.PlatformView.MeasuredWidth, _child.PlatformView.MeasuredHeight);
+				var size = _child.MeasureVirtualView(widthMeasureSpec, heightMeasureSpec);
+				SetMeasuredDimension((int)size.Width, (int)size.Height);
 			}
 		}
 	}

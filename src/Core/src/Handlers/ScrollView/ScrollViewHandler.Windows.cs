@@ -12,7 +12,7 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class ScrollViewHandler : ViewHandler<IScrollView, ScrollViewer>
 	{
-		const string InsetPanelTag = "MAUIContentInsetPanel";
+		const string ContentPanelTag = "MAUIScrollViewContentPanel";
 
 		protected override ScrollViewer CreatePlatformView()
 		{
@@ -31,33 +31,12 @@ namespace Microsoft.Maui.Handlers
 			platformView.ViewChanged -= ViewChanged;
 		}
 
-		public override Size GetDesiredSize(double widthConstraint, double heightConstraint)
-		{
-			var result = base.GetDesiredSize(widthConstraint, heightConstraint);
-
-			if (GetInsetPanel(PlatformView) == null)
-			{
-				VirtualView.CrossPlatformMeasure(widthConstraint, heightConstraint);
-			}
-
-			return result;
-		}
-
 		public static void MapContent(IScrollViewHandler handler, IScrollView scrollView)
 		{
 			if (handler.PlatformView == null || handler.MauiContext == null)
 				return;
 
-			if (NeedsInsetPanel(scrollView))
-			{
-				UpdateInsetPanel(scrollView, handler);
-			}
-			else
-			{
-				var scrollViewer = handler.PlatformView;
-				RemoveInsetPanel(scrollViewer);
-				scrollViewer.UpdateContent(scrollView.PresentedContent, handler.MauiContext);
-			}
+			UpdateContentPanel(scrollView, handler);
 		}
 
 		public static void MapHorizontalScrollBarVisibility(IScrollViewHandler handler, IScrollView scrollView)
@@ -79,7 +58,7 @@ namespace Microsoft.Maui.Handlers
 		{
 			if (args is ScrollToRequest request)
 			{
-				handler.PlatformView.ChangeView(request.HoriztonalOffset, request.VerticalOffset, null, request.Instant);
+				handler.PlatformView.ChangeView(request.HorizontalOffset, request.VerticalOffset, null, request.Instant);
 			}
 		}
 
@@ -101,40 +80,21 @@ namespace Microsoft.Maui.Handlers
 			Problem 2: The ScrollViewer will force any content to start at the origin (0,0), even if we ask 
 			to arrange it at an offset. This defeats our content's Margin properties. 
 
-			To handle this, we detect whether the content has a Margin or the cross-platform ScrollView has a Padding;
-			if so, we insert a container ContentPanel which always lays out at the origin but provides both the Padding
-			and the Margin for the content. The extra layer is only inserted if necessary, and is removed if the Padding
-			and Margin are set to zero. The extra layer uses the native ContentPanel control we already provide
-			as the backing control for ContentView, Page, etc. 
+			To handle this, we insert a container ContentPanel which always lays out at the origin but provides both 
+			the Padding and the Margin for the content. The extra layer uses the native ContentPanel control we already 
+			provide as the backing control for ContentView, Page, etc. 
+
+			The extra layer also provides a place to call CrossPlatformArrange for the content, since we 
+			can't subclass ScrollViewer.
 
 			The methods below exist to support inserting/updating the padding/margin panel.
 		 */
 
-		static bool NeedsInsetPanel(IScrollView scrollView)
-		{
-			if (scrollView.PresentedContent == null)
-			{
-				return false;
-			}
-
-			if (scrollView.Padding != Thickness.Zero)
-			{
-				return true;
-			}
-
-			if (scrollView.PresentedContent.Margin != Thickness.Zero)
-			{
-				return true;
-			}
-
-			return false;
-		}
-
-		static ContentPanel? GetInsetPanel(ScrollViewer scrollViewer) 
+		static ContentPanel? GetContentPanel(ScrollViewer scrollViewer)
 		{
 			if (scrollViewer.Content is ContentPanel contentPanel)
 			{
-				if (contentPanel.Tag is string tag && tag == InsetPanelTag)
+				if (contentPanel.Tag is string tag && tag == ContentPanelTag)
 				{
 					return contentPanel;
 				}
@@ -143,19 +103,7 @@ namespace Microsoft.Maui.Handlers
 			return null;
 		}
 
-		static void RemoveInsetPanel(ScrollViewer scrollViewer) 
-		{
-			if (GetInsetPanel(scrollViewer) is ContentPanel currentPaddingLayer)
-			{
-				if (currentPaddingLayer.Children.Count > 0)
-				{
-					currentPaddingLayer.Children.Clear();
-					scrollViewer.Content = null;
-				}
-			}
-		}
-
-		static void UpdateInsetPanel(IScrollView scrollView, IScrollViewHandler handler)
+		static void UpdateContentPanel(IScrollView scrollView, IScrollViewHandler handler)
 		{
 			if (scrollView.PresentedContent == null || handler.MauiContext == null)
 			{
@@ -165,21 +113,22 @@ namespace Microsoft.Maui.Handlers
 			var scrollViewer = handler.PlatformView;
 			var nativeContent = scrollView.PresentedContent.ToPlatform(handler.MauiContext);
 
-			if (GetInsetPanel(scrollViewer) is ContentPanel currentPaddingLayer)
+			if (GetContentPanel(scrollViewer) is ContentPanel currentPaddingLayer)
 			{
 				if (currentPaddingLayer.Children.Count == 0 || currentPaddingLayer.Children[0] != nativeContent)
 				{
 					currentPaddingLayer.Children.Clear();
 					currentPaddingLayer.Children.Add(nativeContent);
+
 				}
 			}
 			else
 			{
-				InsertInsetPanel(scrollViewer, scrollView, nativeContent);
+				InsertContentPanel(scrollViewer, scrollView, nativeContent);
 			}
 		}
 
-		static void InsertInsetPanel(ScrollViewer scrollViewer, IScrollView scrollView, FrameworkElement nativeContent)
+		static void InsertContentPanel(ScrollViewer scrollViewer, IScrollView scrollView, FrameworkElement nativeContent)
 		{
 			if (scrollView.PresentedContent == null)
 			{
@@ -190,7 +139,7 @@ namespace Microsoft.Maui.Handlers
 			{
 				CrossPlatformMeasure = IncludeScrollViewInsets(scrollView.CrossPlatformMeasure, scrollView),
 				CrossPlatformArrange = scrollView.CrossPlatformArrange,
-				Tag = InsetPanelTag
+				Tag = ContentPanelTag
 			};
 
 			scrollViewer.Content = null;
@@ -206,7 +155,7 @@ namespace Microsoft.Maui.Handlers
 			};
 		}
 
-		static Size InsetScrollView(double widthConstraint, double heightConstraint, Func<double, double, Size> internalMeasure, IScrollView scrollView) 
+		static Size InsetScrollView(double widthConstraint, double heightConstraint, Func<double, double, Size> internalMeasure, IScrollView scrollView)
 		{
 			var padding = scrollView.Padding;
 			var presentedContent = scrollView.PresentedContent;
@@ -236,7 +185,7 @@ namespace Microsoft.Maui.Handlers
 			}
 
 			// If the presented content has LayoutAlignment Fill, we'll need to adjust the measurement to account for that
-			return fullSize.AdjustForFill(new Rectangle(0, 0, widthConstraint, heightConstraint), presentedContent);
+			return fullSize.AdjustForFill(new Rect(0, 0, widthConstraint, heightConstraint), presentedContent);
 		}
 	}
 }

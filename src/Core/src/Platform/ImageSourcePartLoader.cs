@@ -2,18 +2,21 @@
 using System.Threading.Tasks;
 using Microsoft.Maui.Handlers;
 
-#if __IOS__ || MACCATALYST
+#if IOS || MACCATALYST
 using PlatformImage = UIKit.UIImage;
 using PlatformView = UIKit.UIView;
-#elif MONOANDROID
+#elif ANDROID
 using PlatformImage = Android.Graphics.Drawables.Drawable;
 using PlatformView = Android.Views.View;
 #elif WINDOWS
 using PlatformImage = Microsoft.UI.Xaml.Media.ImageSource;
 using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
-using PlatformView = System.Object;
+#elif TIZEN
+using PlatformImage = Microsoft.Maui.Platform.MauiImageSource;
+using PlatformView = Tizen.NUI.BaseComponents.View;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformImage = System.Object;
+using PlatformView = System.Object;
 #endif
 
 namespace Microsoft.Maui.Platform
@@ -56,7 +59,7 @@ namespace Microsoft.Maui.Platform
 
 				if (imageSource != null)
 				{
-#if __IOS__ || __ANDROID__ || WINDOWS
+#if __IOS__ || __ANDROID__ || WINDOWS || TIZEN
 					var result = await imageSource.UpdateSourceAsync(PlatformView, ImageSourceServiceProvider, SetImage!, token)
 						.ConfigureAwait(false);
 

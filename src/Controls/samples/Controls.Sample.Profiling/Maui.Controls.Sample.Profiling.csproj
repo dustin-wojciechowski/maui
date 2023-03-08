@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>$(_MauiDotNetTfm)-android;$(_MauiDotNetTfm)-maccatalyst;$(_MauiDotNetTfm)-ios</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IncludeAndroidTargetFrameworks)' == 'true'">net$(_MauiDotNetVersion)-android;$(TargetFrameworks)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IncludeMacCatalystTargetFrameworks)' == 'true'">net$(_MauiDotNetVersion)-maccatalyst;$(TargetFrameworks)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IncludeIosTargetFrameworks)' == 'true'">net$(_MauiDotNetVersion)-ios;$(TargetFrameworks)</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <SingleProject>true</SingleProject>
     <ApplicationTitle>Profiling</ApplicationTitle>
@@ -9,9 +11,8 @@
     <ApplicationVersion>1</ApplicationVersion>
     <IsPackable>false</IsPackable>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <RuntimeIdentifier Condition="'$(TargetFramework)' == '$(_MauiDotNetTfm)-ios'">iossimulator-x64</RuntimeIdentifier>
-    <RuntimeIdentifier Condition="'$(TargetFramework)' == '$(_MauiDotNetTfm)-maccatalyst'">maccatalyst-x64</RuntimeIdentifier>
-    <RuntimeIdentifiers Condition="'$(TargetFramework)' == '$(_MauiDotNetTfm)-android'">android-arm64;android-x64</RuntimeIdentifiers>
+    <!-- Disable multi-RID builds to workaround a parallel build issue -->
+    <RuntimeIdentifier Condition="$(TargetFramework.Contains('-maccatalyst'))">maccatalyst-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -38,5 +39,7 @@
     <MauiImage Include="Resources\Images\*" />
     <MauiFont Include="Resources\Fonts\*" />
   </ItemGroup>
+
+  <Import Project="$(MauiSrcDirectory)Maui.InTree.props" Condition=" '$(UseMaui)' != 'true' " />
 
 </Project>

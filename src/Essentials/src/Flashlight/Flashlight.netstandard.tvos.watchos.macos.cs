@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
+using Microsoft.Maui.ApplicationModel;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Devices
 {
-	/// <include file="../../docs/Microsoft.Maui.Essentials/Flashlight.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Flashlight']/Docs" />
-	public class FlashlightImplementation : IFlashlight
+	class FlashlightImplementation : IFlashlight
 	{
 		public Task TurnOnAsync() =>
 			throw ExceptionUtils.NotSupportedOrImplementedException;

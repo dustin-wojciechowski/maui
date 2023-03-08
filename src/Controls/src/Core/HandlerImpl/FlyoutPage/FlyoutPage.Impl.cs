@@ -1,10 +1,8 @@
-﻿#nullable enable
-
-using Microsoft.Maui.Essentials;
+﻿using Microsoft.Maui.Devices;
 
 namespace Microsoft.Maui.Controls
 {
-	/// <include file="../../../../docs/Microsoft.Maui.Controls/FlyoutPage.xml" path="Type[@FullName='Microsoft.Maui.Controls.FlyoutPage']/Docs" />
+	/// <include file="../../../../docs/Microsoft.Maui.Controls/FlyoutPage.xml" path="Type[@FullName='Microsoft.Maui.Controls.FlyoutPage']/Docs/*" />
 	public partial class FlyoutPage : IFlyoutView
 	{
 		IView IFlyoutView.Flyout => this.Flyout;
@@ -30,7 +28,7 @@ namespace Microsoft.Maui.Controls
 		{
 			get
 			{
-				if (Device.Idiom == TargetIdiom.Phone)
+				if (DeviceInfo.Idiom == DeviceIdiom.Phone)
 					return -1;
 
 				var scaledScreenSize = DeviceDisplay.MainDisplayInfo.GetScaledScreenSize();
@@ -41,28 +39,5 @@ namespace Microsoft.Maui.Controls
 #else
 		double IFlyoutView.FlyoutWidth => -1;
 #endif
-
-
-		private protected override void OnHandlerChangingCore(HandlerChangingEventArgs args)
-		{
-			base.OnHandlerChangingCore(args);
-
-			if (Device.Idiom == TargetIdiom.Phone)
-				return;
-
-			if (args.NewHandler == null)
-			{
-				DeviceDisplay.MainDisplayInfoChanged -= OnMainDisplayInfoChanged;
-			}
-			else if (args.OldHandler == null)
-			{
-				DeviceDisplay.MainDisplayInfoChanged += OnMainDisplayInfoChanged;
-			}
-		}
-
-		void OnMainDisplayInfoChanged(object? sender, DisplayInfoChangedEventArgs e)
-		{
-			Handler?.UpdateValue(nameof(FlyoutBehavior));
-		}
 	}
 }

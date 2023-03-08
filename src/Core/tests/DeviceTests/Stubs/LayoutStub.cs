@@ -68,7 +68,7 @@ namespace Microsoft.Maui.DeviceTests.Stubs
 			return LayoutManager.Measure(widthConstraint, heightConstraint);
 		}
 
-		public Size CrossPlatformArrange(Rectangle bounds)
+		public Size CrossPlatformArrange(Rect bounds)
 		{
 			return LayoutManager.ArrangeChildren(bounds);
 		}
@@ -77,7 +77,9 @@ namespace Microsoft.Maui.DeviceTests.Stubs
 		public int Count => _children.Count;
 		public bool IsReadOnly => _children.IsReadOnly;
 
-		ILayoutManager LayoutManager => _layoutManager ??= new LayoutManagerStub();
+		ILayoutManager LayoutManager => _layoutManager ??= CreateLayoutManager();
+
+		protected virtual ILayoutManager CreateLayoutManager() => new LayoutManagerStub();
 
 		public bool IgnoreSafeArea => false;
 

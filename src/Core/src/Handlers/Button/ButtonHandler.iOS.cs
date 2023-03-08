@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Maui.Graphics;
 using UIKit;
 
 namespace Microsoft.Maui.Handlers
@@ -8,19 +9,8 @@ namespace Microsoft.Maui.Handlers
 	{
 		static readonly UIControlState[] ControlStates = { UIControlState.Normal, UIControlState.Highlighted, UIControlState.Disabled };
 
-		static UIColor? ButtonTextColorDefaultDisabled;
-		static UIColor? ButtonTextColorDefaultHighlighted;
-		static UIColor? ButtonTextColorDefaultNormal;
-
 		// This appears to be the padding that Xcode has when "Default" content insets are used
 		public readonly static Thickness DefaultPadding = new Thickness(12, 7);
-
-		void SetupDefaults(UIButton platformView)
-		{
-			ButtonTextColorDefaultNormal ??= platformView.TitleColor(UIControlState.Normal);
-			ButtonTextColorDefaultHighlighted ??= platformView.TitleColor(UIControlState.Highlighted);
-			ButtonTextColorDefaultDisabled ??= platformView.TitleColor(UIControlState.Disabled);
-		}
 
 		protected override UIButton CreatePlatformView()
 		{
@@ -31,8 +21,6 @@ namespace Microsoft.Maui.Handlers
 
 		protected override void ConnectHandler(UIButton platformView)
 		{
-			SetupDefaults(platformView);
-
 			platformView.TouchUpInside += OnButtonTouchUpInside;
 			platformView.TouchUpOutside += OnButtonTouchUpOutside;
 			platformView.TouchDown += OnButtonTouchDown;
@@ -45,8 +33,40 @@ namespace Microsoft.Maui.Handlers
 			platformView.TouchUpInside -= OnButtonTouchUpInside;
 			platformView.TouchUpOutside -= OnButtonTouchUpOutside;
 			platformView.TouchDown -= OnButtonTouchDown;
+
 			base.DisconnectHandler(platformView);
 		}
+
+#if MACCATALYST
+		//TODO: make this public on NET8
+		internal static void MapBackground(IButtonHandler handler, IButton button)
+		{
+			//If this is a Mac optimized interface
+			if (OperatingSystem.IsIOSVersionAtLeast(15) && UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Mac)
+			{
+				var config = handler.PlatformView?.Configuration ?? UIButtonConfiguration.BorderedButtonConfiguration;
+				if (button?.Background is Paint paint)
+				{
+					if (paint is SolidPaint solidPaint)
+					{
+						Color backgroundColor = solidPaint.Color;
+
+						if (backgroundColor == null)
+							config.BaseBackgroundColor = ColorExtensions.BackgroundColor;
+						else
+							config.BaseBackgroundColor = backgroundColor.ToPlatform();
+
+					}
+				}
+				if (handler.PlatformView != null)
+					handler.PlatformView.Configuration = config;
+			}
+			else
+			{
+				handler.PlatformView?.UpdateBackground(button);
+			}
+		}
+#endif
 
 		public static void MapStrokeColor(IButtonHandler handler, IButtonStroke buttonStroke)
 		{
@@ -73,7 +93,19 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapTextColor(IButtonHandler handler, ITextStyle button)
 		{
-			handler.PlatformView?.UpdateTextColor(button, ButtonTextColorDefaultNormal, ButtonTextColorDefaultHighlighted, ButtonTextColorDefaultDisabled);
+			//If this is a Mac optimized interface
+			if (OperatingSystem.IsIOSVersionAtLeast(15) && UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Mac)
+			{
+				var config = handler.PlatformView?.Configuration ?? UIButtonConfiguration.BorderedButtonConfiguration;
+				if (button?.TextColor != null && handler.PlatformView != null)
+					config.BaseForegroundColor = button?.TextColor.ToPlatform();
+				if (handler.PlatformView != null)
+					handler.PlatformView.Configuration = config;
+			}
+			else
+			{
+				handler.PlatformView?.UpdateTextColor(button);
+			}
 		}
 
 		public static void MapCharacterSpacing(IButtonHandler handler, ITextStyle button)
@@ -111,10 +143,10 @@ namespace Microsoft.Maui.Handlers
 			}
 		}
 
-		public static void MapImageSource(IButtonHandler handler, IImageButton image) =>
+		public static void MapImageSource(IButtonHandler handler, IImage image) =>
 			MapImageSourceAsync(handler, image).FireAndForget(handler);
 
-		public static Task MapImageSourceAsync(IButtonHandler handler, IImageButton image)
+		public static Task MapImageSourceAsync(IButtonHandler handler, IImage image)
 		{
 			if (image.Source == null)
 			{

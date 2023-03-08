@@ -1,4 +1,6 @@
+#nullable disable
 using System;
+using System.ComponentModel;
 using CoreGraphics;
 using Foundation;
 using Microsoft.Maui.Controls.Internals;
@@ -93,6 +95,24 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			return size;
 		}
 
+		[Obsolete]
+		[EditorBrowsable(EditorBrowsableState.Never)]
+		protected void Layout(CGSize constraints)
+		{
+			var platformView = PlatformHandler.ToPlatform();
+
+			var width = constraints.Width;
+			var height = constraints.Height;
+
+			PlatformHandler.VirtualView.Measure(width, height);
+
+			platformView.Frame = new CGRect(0, 0, width, height);
+
+			var rectangle = platformView.Frame.ToRectangle();
+			PlatformHandler.VirtualView.Arrange(rectangle);
+			_size = rectangle.Size;
+		}
+
 		public void Bind(DataTemplate template, object bindingContext, ItemsView itemsView)
 		{
 			var oldElement = PlatformHandler?.VirtualView as View;
@@ -172,23 +192,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			InitializeContentConstraints(platformView);
 
+			UpdateVisualStates();
+
 			(renderer.VirtualView as View).MeasureInvalidated += MeasureInvalidated;
-		}
-
-		protected void Layout(CGSize constraints)
-		{
-			var platformView = PlatformHandler.ToPlatform();
-
-			var width = constraints.Width;
-			var height = constraints.Height;
-
-			PlatformHandler.VirtualView.Measure(width, height);
-
-			platformView.Frame = new CGRect(0, 0, width, height);
-
-			var rectangle = platformView.Frame.ToRectangle();
-			PlatformHandler.VirtualView.Arrange(rectangle);
-			_size = rectangle.Size;
 		}
 
 		void ClearSubviews()
@@ -244,14 +250,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			{
 				base.Selected = value;
 
-				var element = PlatformHandler?.VirtualView as VisualElement;
-
-				if (element != null)
-				{
-					VisualStateManager.GoToState(element, value
-						? VisualStateManager.CommonStates.Selected
-						: VisualStateManager.CommonStates.Normal);
-				}
+				UpdateVisualStates();
 			}
 		}
 
@@ -300,6 +299,16 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			}
 
 			return true;
+		}
+
+		void UpdateVisualStates()
+		{
+			if (PlatformHandler?.VirtualView is VisualElement element)
+			{
+				VisualStateManager.GoToState(element, Selected
+					? VisualStateManager.CommonStates.Selected
+					: VisualStateManager.CommonStates.Normal);
+			}
 		}
 	}
 }

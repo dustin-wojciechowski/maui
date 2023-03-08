@@ -28,6 +28,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 		}
 	}
 
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class DatePickerRenderer : DatePickerRendererBase<UITextField>
 	{
 		[Microsoft.Maui.Controls.Internals.Preserve(Conditional = true)]
@@ -43,6 +44,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 		}
 	}
 
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public abstract class DatePickerRendererBase<TControl> : ViewRenderer<DatePicker, TControl>
 		where TControl : UITextField
 	{
@@ -150,6 +152,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 			}
 		}
 
+		[PortHandler]
 		void HandleValueChanged(object sender, EventArgs e)
 		{
 			if (Element.OnThisPlatform().UpdateMode() == UpdateMode.Immediately)
@@ -170,6 +173,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 			ElementController.SetValueFromRenderer(VisualElement.IsFocusedPropertyKey, true);
 		}
 
+		[PortHandler]
 		void UpdateDateFromModel(bool animate)
 		{
 			if (_picker.Date.ToDateTime().Date != Element.Date.Date)
@@ -204,6 +208,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 			}
 		}
 
+		[PortHandler]
 		void UpdateElementDate()
 		{
 			ElementController.SetValueFromRenderer(DatePicker.DateProperty, _picker.Date.ToDateTime().Date);
@@ -241,6 +246,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 			_picker.MinimumDate = Element.MinimumDate.ToNSDate();
 		}
 
+		[PortHandler]
 		protected internal virtual void UpdateTextColor()
 		{
 			var textColor = Element.TextColor;
@@ -248,7 +254,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 			if (textColor == null || (!Element.IsEnabled && _useLegacyColorManagement))
 				Control.TextColor = _defaultTextColor;
 			else
-				Control.TextColor = textColor.ToUIColor();
+				Control.TextColor = textColor.ToPlatform();
 
 			// HACK This forces the color to update; there's probably a more elegant way to make this happen
 			Control.Text = Control.Text;

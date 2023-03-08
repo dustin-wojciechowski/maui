@@ -1,14 +1,12 @@
 <Project>
 
   <PropertyGroup>
-    <UsingMicrosoftMauiControlsSdk>true</UsingMicrosoftMauiControlsSdk>
+    <UsingMicrosoftMauiSdk>true</UsingMicrosoftMauiSdk>
   </PropertyGroup>
 
-  <!--
-    We aren't supposed to set properties in AutoImport.props
-    Importing Microsoft.Maui.Controls.props here instead.
-   -->
-  <Import Project="Microsoft.Maui.Controls.props" />
+  <Import Project="Microsoft.Maui.Sdk.Before.targets" />
+
+  <Import Project="$(MicrosoftMauiSdkPlatformTargets)" Condition="'$(MicrosoftMauiSdkPlatformTargets)' != ''" />
 
   <!-- Imported last -->
   <PropertyGroup>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.Versioning;
 using Foundation;
 using Microsoft.Maui.Controls.Platform;
 using Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;
@@ -12,6 +13,7 @@ using PageUIStatusBarAnimation = Microsoft.Maui.Controls.PlatformConfiguration.i
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 {
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class PageRenderer : UIViewController, IVisualElementRenderer, IEffectControlProvider, IShellContentInsetObserver, Controls.Platform.Compatibility.IDisconnectable
 	{
 		bool _appeared;
@@ -99,7 +101,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 			if (rect != _pageContainer.Frame)
 				_pageContainer.Frame = rect;
 
-			Element.Layout(new Rectangle(Element.X, Element.Y, size.Width, size.Height));
+			Element.Layout(new Rect(Element.X, Element.Y, size.Width, size.Height));
 		}
 
 		public override void LoadView()
@@ -138,6 +140,8 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 				NativeView?.UpdateBackgroundLayer();
 		}
 
+		[SupportedOSPlatform("ios11.0")]
+		[SupportedOSPlatform("tvos11.0")]
 		public override void ViewSafeAreaInsetsDidChange()
 		{
 			_safeAreasSet = true;
@@ -156,7 +160,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 
 			_appeared = true;
 			UpdateStatusBarPrefersHidden();
-			if (Forms.RespondsToSetNeedsUpdateOfHomeIndicatorAutoHidden)
+			if (OperatingSystem.IsIOSVersionAtLeast(11))
 				SetNeedsUpdateOfHomeIndicatorAutoHidden();
 
 			if (Element.Parent is CarouselPage)
@@ -322,7 +326,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 			if (Forms.IsiOS13OrNewer &&
 				previousTraitCollection.UserInterfaceStyle != TraitCollection.UserInterfaceStyle &&
 				UIApplication.SharedApplication.ApplicationState != UIApplicationState.Background)
-				Application.Current?.ThemeChanged();
+				((IApplication)Application.Current)?.ThemeChanged();
 		}
 
 		bool ShouldUseSafeArea()
@@ -476,7 +480,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 						NativeView.UpdateBackground(Element.Background);
 					else
 					{
-						NativeView.BackgroundColor = Element.BackgroundColor?.ToUIColor() ?? ColorExtensions.BackgroundColor;
+						NativeView.BackgroundColor = Element.BackgroundColor?.ToPlatform() ?? Maui.Platform.ColorExtensions.BackgroundColor;
 					}
 				}
 			});
@@ -500,7 +504,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 
 		void UpdateHomeIndicatorAutoHidden()
 		{
-			if (Element == null || !Forms.RespondsToSetNeedsUpdateOfHomeIndicatorAutoHidden)
+			if (Element == null || !OperatingSystem.IsIOSVersionAtLeast(11))
 				return;
 
 			SetNeedsUpdateOfHomeIndicatorAutoHidden();

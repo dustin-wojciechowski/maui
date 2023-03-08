@@ -33,17 +33,19 @@ namespace Microsoft.Maui.Platform
 
 		public static void UpdateHorizontalTextAlignment(this UILabel platformLabel, ILabel label)
 		{
-			platformLabel.TextAlignment = label.HorizontalTextAlignment.ToPlatform(label);
+			platformLabel.TextAlignment = label.HorizontalTextAlignment.ToPlatformHorizontal(platformLabel.EffectiveUserInterfaceLayoutDirection);
 		}
 
-		public static void UpdateLineBreakMode(this UILabel platformLabel, ILabel label)
+		// Don't use this method, it doesn't work. But we can't remove it.
+		public static void UpdateVerticalTextAlignment(this UILabel platformLabel, ILabel label)
 		{
-			platformLabel.SetLineBreakMode(label);
+			if (!platformLabel.Bounds.IsEmpty)
+				platformLabel.InvalidateMeasure(label);
 		}
 
-		public static void UpdateMaxLines(this UILabel platformLabel, ILabel label)
+		internal static void UpdateVerticalTextAlignment(this MauiLabel platformLabel, ILabel label)
 		{
-			platformLabel.SetLineBreakMode(label);
+			platformLabel.VerticalAlignment = label.VerticalTextAlignment.ToPlatformVertical();
 		}
 
 		public static void UpdatePadding(this MauiLabel platformLabel, ILabel label)
@@ -81,49 +83,15 @@ namespace Microsoft.Maui.Platform
 				StringEncoding = NSStringEncoding.UTF8
 			};
 
-			NSError? nsError = null;
-
+			NSError nsError = new();
+#pragma warning disable CS8601
 			platformLabel.AttributedText = new NSAttributedString(text, attr, ref nsError);
+#pragma warning restore CS8601
 		}
 
 		internal static void UpdateTextPlainText(this UILabel platformLabel, IText label)
 		{
 			platformLabel.Text = label.Text;
-		}
-
-		internal static void SetLineBreakMode(this UILabel platformLabel, ILabel label)
-		{
-			int maxLines = label.MaxLines;
-			if (maxLines < 0)
-				maxLines = 0;
-
-			switch (label.LineBreakMode)
-			{
-				case LineBreakMode.NoWrap:
-					platformLabel.LineBreakMode = UILineBreakMode.Clip;
-					maxLines = 1;
-					break;
-				case LineBreakMode.WordWrap:
-					platformLabel.LineBreakMode = UILineBreakMode.WordWrap;
-					break;
-				case LineBreakMode.CharacterWrap:
-					platformLabel.LineBreakMode = UILineBreakMode.CharacterWrap;
-					break;
-				case LineBreakMode.HeadTruncation:
-					platformLabel.LineBreakMode = UILineBreakMode.HeadTruncation;
-					maxLines = 1;
-					break;
-				case LineBreakMode.MiddleTruncation:
-					platformLabel.LineBreakMode = UILineBreakMode.MiddleTruncation;
-					maxLines = 1;
-					break;
-				case LineBreakMode.TailTruncation:
-					platformLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-					maxLines = 1;
-					break;
-			}
-
-			platformLabel.Lines = maxLines;
 		}
 	}
 }

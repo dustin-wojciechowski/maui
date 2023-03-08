@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Maui.ApplicationModel;
 using Xunit;
 
 namespace Microsoft.Maui.Essentials.DeviceTests
 {
+	[Category("AppActions")]
 	public class AppActions_Tests
 	{
 		[Fact]

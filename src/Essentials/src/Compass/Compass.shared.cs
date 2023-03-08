@@ -1,62 +1,121 @@
+#nullable enable
 using System;
-using System.ComponentModel;
-using Microsoft.Maui.Essentials;
-using Microsoft.Maui.Essentials.Implementations;
+using Microsoft.Maui.ApplicationModel;
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.Devices.Sensors
 {
+	/// <summary>
+	/// Monitor changes to the orientation of the user's device.
+	/// </summary>
 	public interface ICompass
 	{
+		/// <summary>
+		/// Gets a value indicating whether reading the compass is supported on this device.
+		/// </summary>
 		bool IsSupported { get; }
 
+		/// <summary>
+		/// Gets if compass is actively being monitored.
+		/// </summary>
 		bool IsMonitoring { get; }
 
-		SensorSpeed SensorSpeed { get; }
-
+		/// <summary>
+		/// Start monitoring for changes to the compass.
+		/// </summary>
+		/// <param name="sensorSpeed">The speed to monitor for changes.</param>
 		void Start(SensorSpeed sensorSpeed);
 
+		/// <summary>
+		/// Start monitoring for changes to the compass.
+		/// </summary>
+		/// <param name="sensorSpeed">The speed to monitor for changes.</param>
+		/// <param name="applyLowPassFilter">Whether or not to apply a moving average filter (only used on Android).</param>
 		void Start(SensorSpeed sensorSpeed, bool applyLowPassFilter);
-		
+
+		/// <summary>
+		/// Stop monitoring for changes to the compass.
+		/// </summary>
 		void Stop();
 
+		/// <summary>
+		/// Occurs when compass reading changes.
+		/// </summary>
 		event EventHandler<CompassChangedEventArgs> ReadingChanged;
 	}
 
+	/// <summary>
+	/// Platform-specific APIs for use with <see cref="ICompass"/>.
+	/// </summary>
 	public interface IPlatformCompass
 	{
 #if IOS || MACCATALYST
+		/// <summary>
+		/// Gets or sets if heading calibration should be shown.
+		/// </summary>
 		bool ShouldDisplayHeadingCalibration { get; set; }
 #endif
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/Compass.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Compass']/Docs" />
-	public static partial class Compass
+	/// <summary>
+	/// Monitor changes to the orientation of the user's device.
+	/// </summary>
+	public static class Compass
 	{
+		/// <summary>
+		/// Occurs when compass reading changes.
+		/// </summary>
 		public static event EventHandler<CompassChangedEventArgs> ReadingChanged
 		{
 			add => Current.ReadingChanged += value;
 			remove => Current.ReadingChanged -= value;
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Compass.xml" path="//Member[@MemberName='IsMonitoring']/Docs" />
-		public static bool IsSupported 
+		/// <summary>
+		/// Gets a value indicating whether reading the compass is supported on this device.
+		/// </summary>
+		public static bool IsSupported
 			=> Current.IsSupported;
 
+		/// <summary>
+		/// Gets a value indicating whether the compass is actively being monitored.
+		/// </summary>
 		public static bool IsMonitoring
 			=> Current.IsMonitoring;
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Compass.xml" path="//Member[@MemberName='Start'][0]/Docs" />
-		public static void Start(SensorSpeed sensorSpeed) => Start(sensorSpeed, true);
+		/// <summary>
+		/// Start monitoring for changes to the compass.
+		/// </summary>
+		/// <remarks>
+		/// Will throw <see cref="FeatureNotSupportedException"/> if not supported on device.
+		/// Will throw <see cref="InvalidOperationException"/> if <see cref="IsMonitoring"/> is <see langword="true"/>.
+		/// </remarks>
+		/// <param name="sensorSpeed">The speed to monitor for changes.</param>
+		public static void Start(SensorSpeed sensorSpeed)
+			=> Start(sensorSpeed, true);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Compass.xml" path="//Member[@MemberName='Start'][1]/Docs" />
+		/// <summary>
+		/// Start monitoring for changes to the compass.
+		/// </summary>
+		/// <remarks>
+		/// Will throw <see cref="FeatureNotSupportedException"/> if not supported on device.
+		/// Will throw <see cref="InvalidOperationException"/> if <see cref="IsMonitoring"/> is <see langword="true"/>.
+		/// </remarks>
+		/// <param name="sensorSpeed">The speed to monitor for changes.</param>
+		/// <param name="applyLowPassFilter">Whether or not to apply a moving average filter (only used on Android).</param>
 		public static void Start(SensorSpeed sensorSpeed, bool applyLowPassFilter)
 			=> Current.Start(sensorSpeed, applyLowPassFilter);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Compass.xml" path="//Member[@MemberName='Stop']/Docs" />
+		/// <summary>
+		/// Stop monitoring for changes to the compass.
+		/// </summary>
 		public static void Stop()
 			=> Current.Stop();
 
 #if IOS || MACCATALYST
+		/// <summary>
+		/// Gets or sets a value specifying whether the calibration screen should be displayed.
+		/// </summary>
+		/// <remarks>Only available on iOS.</remarks>
 		public static bool ShouldDisplayHeadingCalibration
 		{
 			get
@@ -73,80 +132,133 @@ namespace Microsoft.Maui.Essentials
 		}
 #endif
 
-#nullable enable
-		static ICompass? currentImplementation;
-#nullable disable
+		static ICompass Current => Devices.Sensors.Compass.Default;
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static ICompass Current =>
-			currentImplementation ??= new CompassImplementation();
+		static ICompass? defaultImplementation;
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-#nullable enable
-		public static void SetCurrent(ICompass? implementation) =>
-			currentImplementation = implementation;
-#nullable disable
+		/// <summary>
+		/// Provides the default implementation for static usage of this API.
+		/// </summary>
+		public static ICompass Default =>
+			defaultImplementation ??= new CompassImplementation();
+
+		internal static void SetDefault(ICompass? implementation) =>
+			defaultImplementation = implementation;
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/CompassChangedEventArgs.xml" path="Type[@FullName='Microsoft.Maui.Essentials.CompassChangedEventArgs']/Docs" />
+	/// <summary>
+	/// This class contains static extension methods for use with <see cref="ICompass"/>.
+	/// </summary>
+	public static class CompassExtensions
+	{
+#if IOS || MACCATALYST
+		/// <summary>
+		/// Gets or sets a value specifying whether the calibration screen should be displayed.
+		/// </summary>
+		/// <remarks>Only available on iOS.</remarks>
+		public static void SetShouldDisplayHeadingCalibration(this ICompass compass, bool shouldDisplay)
+		{
+			if (compass is IPlatformCompass platform)
+			{
+				platform.ShouldDisplayHeadingCalibration = shouldDisplay;
+			}
+		}
+#endif
+	}
+
+	/// <summary>
+	/// Event arguments when compass reading changes.
+	/// </summary>
 	public class CompassChangedEventArgs : EventArgs
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/CompassChangedEventArgs.xml" path="//Member[@MemberName='.ctor']/Docs" />
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CompassChangedEventArgs"/> class.
+		/// </summary>
+		/// <param name="reading">The compass data reading.</param>
 		public CompassChangedEventArgs(CompassData reading) =>
 			Reading = reading;
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/CompassChangedEventArgs.xml" path="//Member[@MemberName='Reading']/Docs" />
+		/// <summary>
+		/// The current values of the compass.
+		/// </summary>
 		public CompassData Reading { get; }
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/CompassData.xml" path="Type[@FullName='Microsoft.Maui.Essentials.CompassData']/Docs" />
+	/// <summary>
+	/// Contains the orientation of the user's device.
+	/// </summary>
 	public readonly struct CompassData : IEquatable<CompassData>
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/CompassData.xml" path="//Member[@MemberName='.ctor']/Docs" />
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CompassData"/> class.
+		/// </summary>
+		/// <param name="headingMagneticNorth">A reading of compass data for heading magnetic north.</param>
 		public CompassData(double headingMagneticNorth) =>
 			HeadingMagneticNorth = headingMagneticNorth;
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/CompassData.xml" path="//Member[@MemberName='HeadingMagneticNorth']/Docs" />
+		/// <summary>
+		/// The heading (measured in degrees) relative to magnetic north.
+		/// </summary>
 		public double HeadingMagneticNorth { get; }
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/CompassData.xml" path="//Member[@MemberName='Equals'][0]/Docs" />
-		public override bool Equals(object obj) =>
+		/// <summary>
+		/// Compares the underlying <see cref="CompassData"/> instances.
+		/// </summary>
+		/// <param name="obj">Object to compare with.</param>
+		/// <returns><see langword="true"/> if they are equal, otherwise <see langword="false"/>.</returns>
+		public override bool Equals(object? obj) =>
 			(obj is CompassData data) && Equals(data);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/CompassData.xml" path="//Member[@MemberName='Equals'][1]/Docs" />
+		/// <summary>
+		/// Compares the underlying <see cref="CompassData.HeadingMagneticNorth"/> instances.
+		/// </summary>
+		/// <param name="other">Object to compare with.</param>
+		/// <returns><see langword="true"/> if they are equal, otherwise <see langword="false"/>.</returns>
 		public bool Equals(CompassData other) =>
 			HeadingMagneticNorth.Equals(other.HeadingMagneticNorth);
 
+		/// <summary>
+		///	Equality operator for equals.
+		/// </summary>
+		/// <param name="left">Left to compare.</param>
+		/// <param name="right">Right to compare.</param>
+		/// <returns><see langword="true"/> if objects are equal, otherwise <see langword="false"/>.</returns>
 		public static bool operator ==(CompassData left, CompassData right) =>
 			left.Equals(right);
 
+		/// <summary>
+		/// Inequality operator.
+		/// </summary>
+		/// <param name="left">Left to compare.</param>
+		/// <param name="right">Right to compare.</param>
+		/// <returns><see langword="true"/> if objects are not equal, otherwise <see langword="false"/>.</returns>
 		public static bool operator !=(CompassData left, CompassData right) =>
 		   !left.Equals(right);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/CompassData.xml" path="//Member[@MemberName='GetHashCode']/Docs" />
+		/// <inheritdoc cref="object.GetHashCode"/>
 		public override int GetHashCode() =>
 			HeadingMagneticNorth.GetHashCode();
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/CompassData.xml" path="//Member[@MemberName='ToString']/Docs" />
+		/// <summary>
+		/// Returns a string representation of the current values of <see cref="CompassData.HeadingMagneticNorth"/>.
+		/// </summary>
+		/// <returns>A string representation of this instance in the format of <c>HeadingMagneticNorth: {value}</c>.</returns>
 		public override string ToString() =>
 			$"{nameof(HeadingMagneticNorth)}: {HeadingMagneticNorth}";
 	}
-}
 
-namespace Microsoft.Maui.Essentials.Implementations
-{
-	public partial class CompassImplementation : ICompass
+	partial class CompassImplementation : ICompass
 	{
 		bool UseSyncContext => SensorSpeed == SensorSpeed.Default || SensorSpeed == SensorSpeed.UI;
 
-		public event EventHandler<CompassChangedEventArgs> ReadingChanged;
+		public event EventHandler<CompassChangedEventArgs>? ReadingChanged;
 
 		public bool IsSupported
 			=> PlatformIsSupported;
 
 		public bool IsMonitoring { get; private set; }
 
-		public SensorSpeed SensorSpeed { get; private set; }
+		SensorSpeed SensorSpeed { get; set; }
 
 		public void Start(SensorSpeed sensorSpeed) => Start(sensorSpeed, true);
 
@@ -159,7 +271,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 				throw new InvalidOperationException("Compass has already been started.");
 
 			IsMonitoring = true;
-			
+
 
 			try
 			{
@@ -172,7 +284,6 @@ namespace Microsoft.Maui.Essentials.Implementations
 			}
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Compass.xml" path="//Member[@MemberName='Stop']/Docs" />
 		public void Stop()
 		{
 			if (!PlatformIsSupported)

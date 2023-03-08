@@ -5,7 +5,7 @@ using Maui.Controls.Sample.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui;
 using Microsoft.Maui.Controls;
-using Microsoft.Maui.Essentials;
+using Microsoft.Maui.Storage;
 
 namespace Maui.Controls.Sample
 {
@@ -48,8 +48,11 @@ namespace Maui.Controls.Sample
 		// Must not use MainPage for multi-window
 		protected override Window CreateWindow(IActivationState activationState)
 		{
-			var window = new Window(Services.GetRequiredService<Page>());
-			window.Title = ".NET MAUI Samples Gallery";
+			var window = new MauiWindow(Services.GetRequiredService<Page>())
+			{
+				Title = ".NET MAUI Samples Gallery"
+			};
+
 			return window;
 		}
 

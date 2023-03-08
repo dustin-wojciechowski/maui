@@ -2,10 +2,11 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Android.Views;
+using Microsoft.Maui.ApplicationModel;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Devices
 {
-	public partial class HapticFeedbackImplementation : IHapticFeedback
+	partial class HapticFeedbackImplementation : IHapticFeedback
 	{
 		public bool IsSupported => true;
 
@@ -15,7 +16,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 			try
 			{
-				Platform.CurrentActivity?.Window?.DecorView?.PerformHapticFeedback(ConvertType(type));
+				ActivityStateManager.Default.GetCurrentActivity()?.Window?.DecorView?.PerformHapticFeedback(ConvertType(type));
 			}
 			catch (Exception ex)
 			{
@@ -27,7 +28,9 @@ namespace Microsoft.Maui.Essentials.Implementations
 			type switch
 			{
 				HapticFeedbackType.LongPress => FeedbackConstants.LongPress,
+#pragma warning disable CA1416 // Introduced in API 23: https://developer.android.com/reference/android/view/HapticFeedbackConstants#CONTEXT_CLICK
 				_ => FeedbackConstants.ContextClick
+#pragma warning restore CA1416
 			};
 	}
 }

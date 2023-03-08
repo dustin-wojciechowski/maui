@@ -8,7 +8,7 @@ namespace Microsoft.Maui.Handlers
 {
 	public abstract partial class ViewHandler<TVirtualView, TPlatformView> : IPlatformViewHandler
 	{
-		public override void PlatformArrange(Rectangle rect) =>
+		public override void PlatformArrange(Rect rect) =>
 			this.PlatformArrangeHandler(rect);
 
 		public override Size GetDesiredSize(double widthConstraint, double heightConstraint) =>
@@ -20,9 +20,9 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			var oldParent = (Panel?)PlatformView.Parent;
-
 			var oldIndex = oldParent?.Children.IndexOf(PlatformView);
-			oldParent?.Children.Remove(PlatformView);
+			if (oldIndex is int oldIdx && oldIdx >= 0)
+				oldParent?.Children.RemoveAt(oldIdx);
 
 			ContainerView ??= new WrapperView();
 			((WrapperView)ContainerView).Child = PlatformView;
@@ -36,20 +36,33 @@ namespace Microsoft.Maui.Handlers
 		protected override void RemoveContainer()
 		{
 			if (PlatformView == null || ContainerView == null || PlatformView.Parent != ContainerView)
+			{
+				CleanupContainerView(ContainerView);
+				ContainerView = null;
 				return;
+			}
 
 			var oldParent = (Panel?)ContainerView.Parent;
-
 			var oldIndex = oldParent?.Children.IndexOf(ContainerView);
-			oldParent?.Children.Remove(ContainerView);
+			if (oldIndex is int oldIdx && oldIdx >= 0)
+				oldParent?.Children.RemoveAt(oldIdx);
 
-			((WrapperView)ContainerView).Child = null;
+			CleanupContainerView(ContainerView);
 			ContainerView = null;
 
 			if (oldIndex is int idx && idx >= 0)
 				oldParent?.Children.Insert(idx, PlatformView);
 			else
 				oldParent?.Children.Add(PlatformView);
+
+			void CleanupContainerView(FrameworkElement? containerView)
+			{
+				if (containerView is WrapperView wrapperView)
+				{
+					wrapperView.Child = null;
+					wrapperView.Dispose();
+				}
+			}
 		}
 	}
 }

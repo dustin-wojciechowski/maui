@@ -12,7 +12,7 @@ using UIKit;
 
 namespace Microsoft.Maui.Controls.Compatibility.ControlGallery.iOS
 {
-	public class _57114Renderer : ViewRenderer<Bugzilla57114._57114View, _57114NativeView>
+	public class _57114Renderer : Handlers.Compatibility.ViewRenderer<Bugzilla57114._57114View, _57114NativeView>
 	{
 		protected override void OnElementChanged(ElementChangedEventArgs<Bugzilla57114._57114View> e)
 		{
@@ -40,7 +40,9 @@ namespace Microsoft.Maui.Controls.Compatibility.ControlGallery.iOS
 		public override void TouchesBegan(NSSet touches, UIEvent evt)
 		{
 			base.TouchesBegan(touches, evt);
+#pragma warning disable CS0618 // Type or member is obsolete
 			MessagingCenter.Instance.Send(this as object, Bugzilla57114._57114NativeGestureFiredMessage);
+#pragma warning restore CS0618 // Type or member is obsolete
 		}
 	}
 }

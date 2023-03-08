@@ -1,4 +1,5 @@
-﻿using Microsoft.Maui.Graphics;
+﻿#nullable disable
+using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Layouts;
 using Flex = Microsoft.Maui.Layouts.Flex;
 
@@ -26,9 +27,9 @@ namespace Microsoft.Maui.Controls
 			parent.RemoveAt((uint)index);
 		}
 
-		public static Rectangle GetFrame(this Flex.Item item)
+		public static Rect GetFrame(this Flex.Item item)
 		{
-			return new Rectangle(item.Frame[0], item.Frame[1], item.Frame[2], item.Frame[3]);
+			return new Rect(item.Frame[0], item.Frame[1], item.Frame[2], item.Frame[3]);
 		}
 
 		public static Size GetConstraints(this Flex.Item item)

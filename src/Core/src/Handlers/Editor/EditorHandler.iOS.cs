@@ -1,17 +1,50 @@
 ﻿using System;
 using CoreGraphics;
 using Foundation;
+using Microsoft.Maui.Devices;
 using Microsoft.Maui.Graphics;
-using ObjCRuntime;
 using UIKit;
 
 namespace Microsoft.Maui.Handlers
 {
 	public partial class EditorHandler : ViewHandler<IEditor, MauiTextView>
 	{
-		static readonly int BaseHeight = 30;
+		bool _set;
 
-		protected override MauiTextView CreatePlatformView() => new MauiTextView();
+		protected override MauiTextView CreatePlatformView()
+		{
+			var platformEditor = new MauiTextView();
+
+#if !MACCATALYST
+			var accessoryView = new MauiDoneAccessoryView();
+			accessoryView.SetDataContext(this);
+			accessoryView.SetDoneClicked(OnDoneClicked);
+			platformEditor.InputAccessoryView = accessoryView;
+#endif
+
+			return platformEditor;
+		}
+
+#if !MACCATALYST
+		static void OnDoneClicked(object sender)
+		{
+			if (sender is IEditorHandler handler)
+			{
+				handler.PlatformView.ResignFirstResponder();
+				handler.VirtualView.Completed();
+			}
+		}
+#endif
+
+		public override void SetVirtualView(IView view)
+		{
+			base.SetVirtualView(view);
+
+			if (!_set)
+				PlatformView.SelectionChanged += OnSelectionChanged;
+
+			_set = true;
+		}
 
 		protected override void ConnectHandler(MauiTextView platformView)
 		{
@@ -27,10 +60,36 @@ namespace Microsoft.Maui.Handlers
 			platformView.Started -= OnStarted;
 			platformView.Ended -= OnEnded;
 			platformView.TextSetOrChanged -= OnTextPropertySet;
+
+			if (_set)
+				platformView.SelectionChanged -= OnSelectionChanged;
+
+			_set = false;
 		}
 
-		public override Size GetDesiredSize(double widthConstraint, double heightConstraint) =>
-			new SizeRequest(new Size(widthConstraint, BaseHeight));
+		public override Size GetDesiredSize(double widthConstraint, double heightConstraint)
+		{
+			if (double.IsInfinity(widthConstraint) || double.IsInfinity(heightConstraint))
+			{
+				// If we drop an infinite value into base.GetDesiredSize for the Editor, we'll
+				// get an exception; it doesn't know what do to with it. So instead we'll size
+				// it to fit its current contents and use those values to replace infinite constraints
+
+				PlatformView.SizeToFit();
+
+				if (double.IsInfinity(widthConstraint))
+				{
+					widthConstraint = PlatformView.Frame.Size.Width;
+				}
+
+				if (double.IsInfinity(heightConstraint))
+				{
+					heightConstraint = PlatformView.Frame.Size.Height;
+				}
+			}
+
+			return base.GetDesiredSize(widthConstraint, heightConstraint);
+		}
 
 		public static void MapText(IEditorHandler handler, IEditor editor)
 		{
@@ -67,10 +126,8 @@ namespace Microsoft.Maui.Handlers
 		public static void MapHorizontalTextAlignment(IEditorHandler handler, IEditor editor) =>
 			handler.PlatformView?.UpdateHorizontalTextAlignment(editor);
 
-		[MissingMapper]
-		public static void MapVerticalTextAlignment(IEditorHandler handler, IEditor editor)
-		{
-		}
+		public static void MapVerticalTextAlignment(IEditorHandler handler, IEditor editor) =>
+			handler.PlatformView?.UpdateVerticalTextAlignment(editor);
 
 		public static void MapCursorPosition(IEditorHandler handler, IEditor editor) =>
 			handler.PlatformView?.UpdateCursorPosition(editor);
@@ -88,6 +145,9 @@ namespace Microsoft.Maui.Handlers
 			// Update all of the attributed text formatting properties
 			handler.PlatformView?.UpdateCharacterSpacing(editor);
 		}
+
+		public static void MapIsEnabled(IEditorHandler handler, IEditor editor) =>
+			handler.PlatformView?.UpdateIsEnabled(editor);
 
 		bool OnShouldChangeText(UITextView textView, NSRange range, string replacementString) =>
 			VirtualView.TextWithinMaxLength(textView.Text, range, replacementString);
@@ -110,5 +170,17 @@ namespace Microsoft.Maui.Handlers
 
 		void OnTextPropertySet(object? sender, EventArgs e) =>
 			VirtualView.UpdateText(PlatformView.Text);
+
+		private void OnSelectionChanged(object? sender, EventArgs e)
+		{
+			var cursorPosition = PlatformView.GetCursorPosition();
+			var selectedTextLength = PlatformView.GetSelectedTextLength();
+
+			if (VirtualView.CursorPosition != cursorPosition)
+				VirtualView.CursorPosition = cursorPosition;
+
+			if (VirtualView.SelectionLength != selectedTextLength)
+				VirtualView.SelectionLength = selectedTextLength;
+		}
 	}
 }

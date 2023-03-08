@@ -15,7 +15,12 @@ using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
 using BasePlatformType = WinRT.IWinRTObject;
 using PlatformWindow = Microsoft.UI.Xaml.Window;
 using PlatformApplication = Microsoft.UI.Xaml.Application;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformView = Tizen.NUI.BaseComponents.View;
+using BasePlatformType = System.Object;
+using PlatformWindow = Tizen.NUI.Window;
+using PlatformApplication = Tizen.Applications.CoreApplication;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 using BasePlatformType = System.Object;
 using IPlatformViewHandler = Microsoft.Maui.IViewHandler;
@@ -84,7 +89,7 @@ namespace Microsoft.Maui.Platform
 			}
 
 			if (handler == null)
-				throw new Exception($"Handler not found for view {view}.");
+				throw new HandlerNotFoundException(view);
 
 			handler.SetMauiContext(context);
 
@@ -101,13 +106,8 @@ namespace Microsoft.Maui.Platform
 			if (view is IReplaceableView replaceableView && replaceableView.ReplacedView != view)
 				return replaceableView.ReplacedView.ToPlatform();
 
-			if (view.Handler == null)
-			{
-				var mauiContext = view.Parent?.Handler?.MauiContext ??
-					throw new InvalidOperationException($"{nameof(MauiContext)} should have been set on parent.");
 
-				return view.ToPlatform(mauiContext);
-			}
+			_ = view.Handler ?? throw new InvalidOperationException($"{nameof(MauiContext)} should have been set on parent.");
 
 			if (view.Handler is IViewHandler viewHandler)
 			{
@@ -165,7 +165,7 @@ namespace Microsoft.Maui.Platform
 		public static void SetWindowHandler(this PlatformWindow platformWindow, IWindow window, IMauiContext context) =>
 			SetHandler(platformWindow, window, context);
 
-#if WINDOWS || IOS || ANDROID
+#if WINDOWS || IOS || ANDROID || TIZEN
 		internal static IWindow GetWindow(this IElement element) =>
 			element.Handler?.MauiContext?.GetPlatformWindow()?.GetWindow() ??
 			throw new InvalidOperationException("IWindow not found");

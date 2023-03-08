@@ -2,20 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Maui.Graphics;
-using NUnit.Framework;
+using Xunit;
 using static Microsoft.Maui.Controls.Core.UnitTests.WindowsTests;
 
 namespace Microsoft.Maui.Controls.Core.UnitTests
 {
-	[TestFixture]
+
 	public class WindowOverlayTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void CreateAndRemoveOverlayWindow()
 		{
 			var app = new TestApp();
 			var window = app.CreateWindow() as IWindow;
-			app.LoadPage(new ContentPage());
+			(window as Window).Page = new ContentPage();
 			var windowOverlay = new WindowOverlay(window) as IWindowOverlay;
 
 			// If not processed by a window, should be false.
@@ -48,12 +48,12 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.True(windowOverlay.IsPlatformViewInitialized);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateWindowOverlayAndElements()
 		{
 			var app = new TestApp();
 			var window = app.CreateWindow() as IWindow;
-			app.LoadPage(new ContentPage());
+			(window as Window).Page = new ContentPage();
 			var windowOverlay = new WindowOverlay(window) as IWindowOverlay;
 
 			// First time inserted, should be true.
@@ -78,7 +78,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 
 	public class TestWindowElement : IWindowOverlayElement
 	{
-		public void Draw(ICanvas canvas, RectangleF dirtyRect)
+		public void Draw(ICanvas canvas, RectF dirtyRect)
 		{
 		}
 

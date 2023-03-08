@@ -2,21 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Controls.Internals;
+using Microsoft.Maui.Controls.Platform;
+using Microsoft.Maui.Graphics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Foundation.Metadata;
 using Windows.UI.Core;
-using Microsoft.Maui.Controls.Internals;
 using NativeAutomationProperties = Microsoft.UI.Xaml.Automation.AutomationProperties;
 using WFlowDirection = Microsoft.UI.Xaml.FlowDirection;
 using WImage = Microsoft.UI.Xaml.Controls.Image;
-using Microsoft.Maui.Graphics;
-using Microsoft.Maui.Controls.Platform;
 using WVisibility = Microsoft.UI.Xaml.Visibility;
-using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 {
+	[Obsolete]
 	public abstract class Platform : INavigation
 	{
 		static Task<bool> s_currentAlert;
@@ -147,8 +148,10 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 			UpdateBounds();
 
 			InitializeStatusBar();
-				
-			if(!PlatformVersion.IsDesktop)
+
+			// https://docs.microsoft.com/en-us/windows/winui/api/microsoft.ui.xaml.window.current?view=winui-3.0
+			// The currently activated window for UWP apps. Null for Desktop apps.
+			if (Microsoft.UI.Xaml.Window.Current != null)
 				SystemNavigationManager.GetForCurrentView().BackRequested += OnBackRequested;
 
 			// TODO WINUI: This event is only available on UWP
@@ -283,14 +286,14 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 			return new SizeRequest();
 		}
 
-		internal virtual Rectangle ContainerBounds
+		internal virtual Rect ContainerBounds
 		{
 			get { return _bounds; }
 		}
 
 		internal void UpdatePageSizes()
 		{
-			Rectangle bounds = ContainerBounds;
+			var bounds = ContainerBounds;
 			if (bounds.IsEmpty)
 				return;
 			foreach (Page root in _navModel.Roots)
@@ -305,7 +308,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 			}
 		}
 
-		Rectangle _bounds;
+		Rect _bounds;
 		readonly Panel _container;
 		readonly Microsoft.UI.Xaml.Window _page;
 		Microsoft.UI.Xaml.Controls.ProgressBar _busyIndicator;
@@ -469,7 +472,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 
 		void UpdateBounds()
 		{
-			_bounds = new Rectangle(0, 0, _page.Bounds.Width, _page.Bounds.Height);
+			_bounds = new Rect(0, 0, _page.Bounds.Width, _page.Bounds.Height);
 
 			if (ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
 			{

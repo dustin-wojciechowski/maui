@@ -43,6 +43,12 @@ namespace Microsoft.Maui.Handlers
 			base.ConnectHandler(platformView);
 		}
 
+		// TODO: NET8 make this public
+		internal static void MapBackground(IImageButtonHandler handler, IImageButton imageButton)
+		{
+			(handler.PlatformView as ShapeableImageView)?.UpdateBackground(imageButton);
+		}
+
 		public static void MapStrokeColor(IImageButtonHandler handler, IButtonStroke buttonStroke)
 		{
 			(handler.PlatformView as ShapeableImageView)?.UpdateStrokeColor(buttonStroke);
@@ -56,6 +62,11 @@ namespace Microsoft.Maui.Handlers
 		public static void MapCornerRadius(IImageButtonHandler handler, IButtonStroke buttonStroke)
 		{
 			(handler.PlatformView as ShapeableImageView)?.UpdateCornerRadius(buttonStroke);
+		}
+
+		public static void MapPadding(IImageButtonHandler handler, IImageButton imageButton)
+		{
+			(handler.PlatformView as ShapeableImageView)?.UpdatePadding(imageButton);
 		}
 
 		void OnFocusChange(object? sender, View.FocusChangeEventArgs e)

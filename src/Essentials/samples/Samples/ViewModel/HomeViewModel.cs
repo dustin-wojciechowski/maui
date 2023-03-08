@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Maui.Essentials;
+using Microsoft.Maui.ApplicationModel;
 using Samples.Model;
 using Samples.View;
 
@@ -199,6 +199,12 @@ namespace Samples.ViewModel
 					typeof(SecureStoragePage),
 					"Securely store data.",
 					new[] { "settings", "preferences", "prefs", "security", "storage" }),
+				new SampleItem(
+					"🐊",
+					"Semantic Screen Reader",
+					typeof(SemanticScreenReaderPage),
+					"Read out the semanic contents of a screen.",
+					new[] { "accessibility", "a11y", "screen reader", "semantic" }),
 				new SampleItem(
 					"📲",
 					"Share",

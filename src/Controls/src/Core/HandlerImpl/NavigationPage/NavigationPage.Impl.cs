@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,7 +13,7 @@ using Microsoft.Maui.Layouts;
 
 namespace Microsoft.Maui.Controls
 {
-	/// <include file="../../../../docs/Microsoft.Maui.Controls/NavigationPage.xml" path="Type[@FullName='Microsoft.Maui.Controls.NavigationPage']/Docs" />
+	/// <include file="../../../../docs/Microsoft.Maui.Controls/NavigationPage.xml" path="Type[@FullName='Microsoft.Maui.Controls.NavigationPage']/Docs/*" />
 	public partial class NavigationPage : IStackNavigationView, IToolbarElement
 	{
 		// If the user is making overlapping navigation requests this is used to fire once all navigation 
@@ -28,7 +29,6 @@ namespace Microsoft.Maui.Controls
 		partial void Init()
 		{
 			this.Appearing += OnAppearing;
-			this.NavigatingFrom += OnNavigatingFrom;
 		}
 
 		Thickness IView.Margin => Thickness.Zero;
@@ -106,7 +106,6 @@ namespace Microsoft.Maui.Controls
 				newPage.SendAppearing();
 		}
 
-
 		internal IToolbar FindMyToolbar()
 		{
 			if (this.Toolbar != null)
@@ -125,35 +124,16 @@ namespace Microsoft.Maui.Controls
 			return null;
 		}
 
-		void OnNavigatingFrom(object sender, EventArgs e)
-		{
-			// Update the Container level Toolbar with my Toolbar information
-			if (FindMyToolbar() is NavigationPageToolbar ct)
-			{
-				// If the root page is being covered by a Modal Page then we don't worry about hiding the nav bar
-				bool coveredByModal = ct.Parent is Window && Navigation.ModalStack.Count > 0;
-				ct.ApplyNavigationPage(this, coveredByModal);
-			}
-		}
-
 		void OnAppearing(object sender, EventArgs e)
 		{
 			// Update the Container level Toolbar with my Toolbar information
-			if (FindMyToolbar() is NavigationPageToolbar ct)
+			if (FindMyToolbar() is not NavigationPageToolbar)
 			{
-				ct.ApplyNavigationPage(this, HasAppeared);
-			}
-			// This means the toolbar hasn't been initialized yet
-			// This code figures out what level the toolbar gets set on
-			else
-			{
-
 				// If the root is a flyoutpage then we set the toolbar on the flyout page
 				var flyoutPage = this.FindParentOfType<FlyoutPage>();
 				if (flyoutPage != null && flyoutPage.Parent is IWindow)
 				{
-					var toolbar = new NavigationPageToolbar(flyoutPage);
-					toolbar.ApplyNavigationPage(this, true);
+					var toolbar = new NavigationPageToolbar(flyoutPage, flyoutPage);
 					flyoutPage.Toolbar = toolbar;
 				}
 				// Is the root a modal page?
@@ -164,36 +144,15 @@ namespace Microsoft.Maui.Controls
 
 					if (rootPage is Window w)
 					{
-						var toolbar = new NavigationPageToolbar(w);
-						toolbar.ApplyNavigationPage(this, true);
+						var toolbar = new NavigationPageToolbar(w, w.Page);
 						w.Toolbar = toolbar;
 					}
 					else if (rootPage is Page p)
 					{
-						var toolbar = new NavigationPageToolbar(p);
-						toolbar.ApplyNavigationPage(this, true);
+						var toolbar = new NavigationPageToolbar(p, p);
 						p.Toolbar = toolbar;
 					}
 				}
-			}
-		}
-
-		// This is used for navigation events that don't effect the currently visible page
-		// InsertPageBefore/RemovePage
-		async void SendHandlerUpdate(bool animated)
-		{
-			try
-			{
-				Interlocked.Increment(ref _waitingCount);
-				await SemaphoreSlim.WaitAsync();
-				var trulyReadOnlyNavigationStack = new List<IView>(NavigationStack);
-				var request = new NavigationRequest(trulyReadOnlyNavigationStack, animated);
-				((IStackNavigation)this).RequestNavigation(request);
-			}
-			finally
-			{
-				Interlocked.Decrement(ref _waitingCount);
-				SemaphoreSlim.Release();
 			}
 		}
 
@@ -222,32 +181,36 @@ namespace Microsoft.Maui.Controls
 				// Wait for pending navigation tasks to finish
 				await SemaphoreSlim.WaitAsync();
 
-				var currentNavRequestTaskSource = new TaskCompletionSource<object>();
-				_allPendingNavigationCompletionSource ??= new TaskCompletionSource<object>();
-
-				if (CurrentNavigationTask == null)
+				// If our handler was removed while waiting then don't do anything
+				if (Handler != null)
 				{
-					CurrentNavigationTask = _allPendingNavigationCompletionSource.Task;
+					var currentNavRequestTaskSource = new TaskCompletionSource<object>();
+					_allPendingNavigationCompletionSource ??= new TaskCompletionSource<object>();
+
+					if (CurrentNavigationTask == null)
+					{
+						CurrentNavigationTask = _allPendingNavigationCompletionSource.Task;
+					}
+					else if (CurrentNavigationTask != _allPendingNavigationCompletionSource.Task)
+					{
+						throw new InvalidOperationException("Pending Navigations still processing");
+					}
+
+					_currentNavigationCompletionSource = currentNavRequestTaskSource;
+
+					// We create a new list to send to the handler because the structure backing 
+					// The Navigation stack isn't immutable
+					var immutableNavigationStack = new List<IView>(NavigationStack);
+					firePostNavigatingEvents?.Invoke();
+
+					// Create the request for the handler
+					var request = new NavigationRequest(immutableNavigationStack, animated);
+					((IStackNavigation)this).RequestNavigation(request);
+
+					// Wait for the handler to finish processing the navigation
+					// This task completes once the handler calls INavigationView.Finished
+					await currentNavRequestTaskSource.Task;
 				}
-				else if (CurrentNavigationTask != _allPendingNavigationCompletionSource.Task)
-				{
-					throw new InvalidOperationException("Pending Navigations still processing");
-				}
-
-				_currentNavigationCompletionSource = currentNavRequestTaskSource;
-
-				// We create a new list to send to the handler because the structure backing 
-				// The Navigation stack isn't immutable
-				var immutableNavigationStack = new List<IView>(NavigationStack);
-				firePostNavigatingEvents?.Invoke();
-
-				// Create the request for the handler
-				var request = new NavigationRequest(immutableNavigationStack, animated);
-				((IStackNavigation)this).RequestNavigation(request);
-
-				// Wait for the handler to finish processing the navigation
-				// This task completes once the handler calls INavigationView.Finished
-				await currentNavRequestTaskSource.Task;
 			}
 			finally
 			{
@@ -268,16 +231,7 @@ namespace Microsoft.Maui.Controls
 		{
 			base.OnHandlerChangedCore();
 
-			if (Handler == null && FindMyToolbar() is IToolbar tb)
-			{
-				tb.Handler = null;
-				if (tb.Parent is Window w)
-					w.Toolbar = null;
-				else if (tb.Parent is Page p)
-					p.Toolbar = null;
-			}
-
-			if (InternalChildren.Count > 0)
+			if (Navigation is MauiNavigationImpl && InternalChildren.Count > 0)
 			{
 				var navStack = Navigation.NavigationStack;
 				var visiblePage = Navigation.NavigationStack[NavigationStack.Count - 1];
@@ -294,6 +248,13 @@ namespace Microsoft.Maui.Controls
 					SendNavigated(null);
 				})
 				.FireAndForget(Handler);
+			}
+
+			// If the handler is disconnected and we're still waiting for updates from the handler
+			// Just complete any waits
+			if (Handler == null && _waitingCount > 0)
+			{
+				((IStackNavigation)this).NavigationFinished(this.NavigationStack);
 			}
 		}
 
@@ -330,13 +291,28 @@ namespace Microsoft.Maui.Controls
 				if (Owner.InternalChildren.Contains(page))
 					throw new ArgumentException("Cannot insert page which is already in the navigation stack");
 
-				int index = Owner.InternalChildren.IndexOf(before);
-				Owner.InternalChildren.Insert(index, page);
 
-				if (index == 0)
-					Owner.RootPage = page;
+				Owner.SendHandlerUpdateAsync(false,
+					() =>
+					{
+						int index = Owner.InternalChildren.IndexOf(before);
+						Owner.InternalChildren.Insert(index, page);
 
-				Owner.SendHandlerUpdate(false);
+						if (index == 0)
+							Owner.RootPage = page;
+					},
+					() =>
+					{
+					},
+					() =>
+					{
+						//// If no other pending operations happen
+						//// Then update the toolbar to match
+						//// the current navigation stack
+						//if (Owner._waitingCount == 0)
+						//	Owner.UpdateToolbar();
+
+					}).FireAndForget();
 			}
 
 			protected async override Task<Page> OnPopAsync(bool animated)
@@ -448,13 +424,26 @@ namespace Microsoft.Maui.Controls
 				if (!Owner.InternalChildren.Contains(page))
 					throw new ArgumentException("Page to remove must be contained on this Navigation Page");
 
-				Owner.RemoveFromInnerChildren(page);
+				Owner.SendHandlerUpdateAsync(false,
+					() =>
+					{
+						Owner.RemoveFromInnerChildren(page);
 
-				if (Owner.RootPage == page)
-					Owner.RootPage = (Page)Owner.InternalChildren.First();
+						if (Owner.RootPage == page)
+							Owner.RootPage = (Page)Owner.InternalChildren[0];
+					},
+					() =>
+					{
+					},
+					() =>
+					{
+						//// If no other pending operations happen
+						//// Then update the toolbar to match
+						//// the current navigation stack
+						//if (Owner._waitingCount == 0)
+						//	Owner.UpdateToolbar();
 
-
-				Owner.SendHandlerUpdate(false);
+					}).FireAndForget();
 			}
 		}
 	}

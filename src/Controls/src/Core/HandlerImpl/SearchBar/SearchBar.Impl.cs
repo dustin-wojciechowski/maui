@@ -1,9 +1,10 @@
-﻿namespace Microsoft.Maui.Controls
+﻿#nullable disable
+namespace Microsoft.Maui.Controls
 {
-	/// <include file="../../../../docs/Microsoft.Maui.Controls/SearchBar.xml" path="Type[@FullName='Microsoft.Maui.Controls.SearchBar']/Docs" />
+	/// <include file="../../../../docs/Microsoft.Maui.Controls/SearchBar.xml" path="Type[@FullName='Microsoft.Maui.Controls.SearchBar']/Docs/*" />
 	public partial class SearchBar : ISearchBar
 	{
-		Font ITextStyle.Font => (Font)GetValue(FontElement.FontProperty);
+		Font ITextStyle.Font => this.ToFont();
 
 		bool ITextInput.IsTextPredictionEnabled => true;
 

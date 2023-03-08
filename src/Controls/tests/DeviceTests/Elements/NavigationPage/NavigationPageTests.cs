@@ -1,10 +1,11 @@
-﻿#if !IOS
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Handlers.Compatibility;
+using Microsoft.Maui.DeviceTests.Stubs;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Hosting;
 using Xunit;
@@ -12,7 +13,8 @@ using Xunit;
 namespace Microsoft.Maui.DeviceTests
 {
 	[Category(TestCategory.NavigationPage)]
-	public partial class NavigationPageTests : HandlerTestBase
+	[Collection(ControlsHandlerTestBase.RunInNewWindowCollection)]
+	public partial class NavigationPageTests : ControlsHandlerTestBase
 	{
 		void SetupBuilder()
 		{
@@ -21,14 +23,71 @@ namespace Microsoft.Maui.DeviceTests
 				builder.ConfigureMauiHandlers(handlers =>
 				{
 					handlers.AddHandler(typeof(Toolbar), typeof(ToolbarHandler));
+#if IOS || MACCATALYST
+					handlers.AddHandler(typeof(NavigationPage), typeof(NavigationRenderer));
+					handlers.AddHandler(typeof(TabbedPage), typeof(TabbedRenderer));
+#else
 					handlers.AddHandler(typeof(NavigationPage), typeof(NavigationViewHandler));
+					handlers.AddHandler(typeof(TabbedPage), typeof(TabbedViewHandler));
+#endif
 					handlers.AddHandler<Page, PageHandler>();
 					handlers.AddHandler<Window, WindowHandlerStub>();
+					handlers.AddHandler<Frame, FrameRenderer>();
 				});
 			});
 		}
 
+		[Fact]
+		public async Task PoppingNavigationPageDoesntCrash()
+		{
+			SetupBuilder();
+			var navPage = new NavigationPage(new ContentPage()) { Title = "App Page" };
 
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				await navPage.PushAsync(new NavigationPage(new ContentPage() { Content = new Frame(), Title = "Detail" }));
+				await navPage.PopAsync();
+			});
+		}
+
+		[Fact]
+		public async Task InitialPageFiresNavigatedEvent()
+		{
+			SetupBuilder();
+			var page = new ContentPage();
+			var navPage = new NavigationPage(page) { Title = "App Page" };
+
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				await OnNavigatedToAsync(page);
+				Assert.True(page.HasNavigatedTo);
+			});
+		}
+
+		[Fact]
+		public async Task PushedPageFiresNavigatedEventOnInitialLoad()
+		{
+			SetupBuilder();
+
+			bool pageFiredNavigated = false;
+			var page = new ContentPage();
+			page.NavigatedTo += (_, _) => pageFiredNavigated = true;
+
+			var page2 = new ContentPage();
+
+			var navPage = new NavigationPage(page) { Title = "App Page" };
+			await navPage.PushAsync(page2);
+
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				await OnNavigatedToAsync(page2);
+				Assert.True(page2.HasNavigatedTo);
+			});
+
+			Assert.False(pageFiredNavigated);
+		}
+
+#if !IOS && !MACCATALYST
 		[Fact(DisplayName = "Back Button Visibility Changes with push/pop")]
 		public async Task BackButtonVisibilityChangesWithPushPop()
 		{
@@ -37,11 +96,11 @@ namespace Microsoft.Maui.DeviceTests
 
 			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
 			{
-				Assert.False(IsBackButtonVisible(handler.MauiContext));
+				Assert.False(IsBackButtonVisible(handler));
 				await navPage.PushAsync(new ContentPage());
-				Assert.True(IsBackButtonVisible(handler.MauiContext));
+				Assert.True(IsBackButtonVisible(handler));
 				await navPage.PopAsync();
-				Assert.False(IsBackButtonVisible(handler.MauiContext));
+				Assert.False(IsBackButtonVisible(handler));
 			});
 		}
 
@@ -55,29 +114,46 @@ namespace Microsoft.Maui.DeviceTests
 			{
 				await navPage.PushAsync(new ContentPage());
 				NavigationPage.SetHasBackButton(navPage.CurrentPage, false);
-				Assert.False(IsBackButtonVisible(handler.MauiContext));
+				Assert.False(IsBackButtonVisible(handler));
 				NavigationPage.SetHasBackButton(navPage.CurrentPage, true);
-				Assert.True(IsBackButtonVisible(handler.MauiContext));
+				Assert.True(IsBackButtonVisible(handler));
+			});
+		}
+#endif
+
+		[Fact(DisplayName = "Set Has Navigation Bar")]
+		public async Task SetHasNavigationBar()
+		{
+			SetupBuilder();
+			var navPage = new NavigationPage(new ContentPage() { Title = "Nav Bar" });
+
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				Assert.True(await AssertionExtensions.Wait(() => IsNavigationBarVisible(handler)));
+				NavigationPage.SetHasNavigationBar(navPage.CurrentPage, false);
+				Assert.True(await AssertionExtensions.Wait(() => !IsNavigationBarVisible(handler)));
+				NavigationPage.SetHasNavigationBar(navPage.CurrentPage, true);
+				Assert.True(await AssertionExtensions.Wait(() => IsNavigationBarVisible(handler)));
 			});
 		}
 
-		[Fact(DisplayName = "Set Has Navigation Bar")]
-		public async Task SettHasNavigationBar()
+		[Fact(DisplayName = "NavigationBar Removes When MainPage Set To ContentPage")]
+		public async Task NavigationBarRemovesWhenMainPageSetToContentPage()
 		{
 			SetupBuilder();
 			var navPage = new NavigationPage(new ContentPage());
+			var window = new Window(navPage);
 
-			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), (handler) =>
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(window, async (handler) =>
 			{
-				Assert.True(IsNavigationBarVisible(handler));
-				NavigationPage.SetHasNavigationBar(navPage.CurrentPage, false);
-				Assert.False(IsNavigationBarVisible(handler));
-				NavigationPage.SetHasNavigationBar(navPage.CurrentPage, true);
-				Assert.True(IsNavigationBarVisible(handler));
-				return Task.CompletedTask;
+				var contentPage = new ContentPage();
+				window.Page = contentPage;
+				await OnLoadedAsync(contentPage);
+				Assert.True(await AssertionExtensions.Wait(() => !IsNavigationBarVisible(handler)));
 			});
 		}
 
+#if !IOS && !MACCATALYST
 		[Fact(DisplayName = "Toolbar Items Map Correctly")]
 		public async Task ToolbarItemsMapCorrectly()
 		{
@@ -97,6 +173,7 @@ namespace Microsoft.Maui.DeviceTests
 				return Task.CompletedTask;
 			});
 		}
+#endif
 
 		[Fact(DisplayName = "Toolbar Title")]
 		public async Task ToolbarTitle()
@@ -111,8 +188,104 @@ namespace Microsoft.Maui.DeviceTests
 			{
 				string title = GetToolbarTitle(handler);
 				Assert.Equal("Page Title", title);
+				return Task.CompletedTask;
+			});
+		}
+
+		[Fact(DisplayName = "Insert Page Before Root Page and then PopToRoot")]
+		public async Task InsertPageBeforeRootPageAndThenPopToRoot()
+		{
+			SetupBuilder();
+			var navPage = new NavigationPage(new ContentPage()
+			{
+				Title = "Page Title"
+			});
+
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				navPage.Navigation.InsertPageBefore(new ContentPage(), navPage.RootPage);
+				await navPage.PopToRootAsync(false);
+			});
+
+			// Just verifying that nothing crashes
+		}
+
+
+#if !IOS && !MACCATALYST
+		[Fact(DisplayName = "Insert Page Before RootPage ShowsBackButton")]
+		public async Task InsertPageBeforeRootPageShowsBackButton()
+		{
+			SetupBuilder();
+			var navPage = new NavigationPage(new ContentPage()
+			{
+				Title = "Page Title"
+			});
+
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				navPage.Navigation.InsertPageBefore(new ContentPage(), navPage.RootPage);
+
+				// InsertPageBefore is actually async in the background so we have to insert a pause
+				// here to allow android to settle before testing
+				await Task.Delay(100);
+
+				Assert.True(IsBackButtonVisible(navPage.Handler));
+			});
+		}
+#endif
+
+		[Fact(DisplayName = "Remove Root Page Hides Back Button")]
+		public async Task RemoveRootPageHidesBackButton()
+		{
+			SetupBuilder();
+			var navPage = new NavigationPage(new ContentPage()
+			{
+				Title = "Page Title"
+			});
+
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				await navPage.Navigation.PushAsync(new ContentPage());
+				navPage.Navigation.RemovePage(navPage.RootPage);
+
+				// RemovePage is actually async in the background so we have to insert a pause
+				// here to allow android to settle before testing
+				await Task.Delay(100);
+
+				Assert.False(IsBackButtonVisible(navPage.Handler));
+			});
+		}
+
+		[Fact(DisplayName = "Pushing a Tabbed Page Doesn't Throw Exception")]
+		public async Task PushingATabbedPageDoesntThrowException()
+		{
+			SetupBuilder();
+			var navPage = new NavigationPage(new ContentPage()
+			{
+				Title = "Page Title"
+			});
+
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				var tabbedPage1 = CreateTabbedPage("1");
+				var tabbedPage2 = CreateTabbedPage("2");
+
+				await navPage.PushAsync(tabbedPage1);
+				tabbedPage1.SelectedItem = tabbedPage1.Children[1];
+				await OnLoadedAsync(tabbedPage1.Children[1]);
+				await navPage.PopAsync();
+				await navPage.PushAsync(tabbedPage2);
+
+				TabbedPage CreateTabbedPage(string title) => new TabbedPage()
+				{
+					Title = title,
+					Children =
+					{
+						new ContentPage(),
+						new ContentPage()
+					}
+				};
 			});
 		}
 	}
 }
-#endif

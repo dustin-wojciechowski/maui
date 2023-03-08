@@ -1,11 +1,9 @@
-using System;
+#nullable disable
 using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Maui.Controls.Internals
 {
-	/// <include file="../../../docs/Microsoft.Maui.Controls.Internals/PropertyPropagationExtensions.xml" path="Type[@FullName='Microsoft.Maui.Controls.Internals.PropertyPropagationExtensions']/Docs" />
+	/// <include file="../../../docs/Microsoft.Maui.Controls.Internals/PropertyPropagationExtensions.xml" path="Type[@FullName='Microsoft.Maui.Controls.Internals.PropertyPropagationExtensions']/Docs/*" />
 	public static class PropertyPropagationExtensions
 	{
 		internal static void PropagatePropertyChanged(string propertyName, Element element, IEnumerable children)
@@ -14,7 +12,10 @@ namespace Microsoft.Maui.Controls.Internals
 				SetFlowDirectionFromParent(element);
 
 			if (propertyName == null || propertyName == VisualElement.VisualProperty.PropertyName)
-				SetVisualfromParent(element);
+				SetVisualFromParent(element);
+
+			if (propertyName == null || propertyName == VisualElement.WindowProperty.PropertyName)
+				SetWindowFromParent(element);
 
 			if (propertyName == null || propertyName == Shell.NavBarIsVisibleProperty.PropertyName)
 				BaseShellItem.PropagateFromParent(Shell.NavBarIsVisibleProperty, element);
@@ -32,7 +33,7 @@ namespace Microsoft.Maui.Controls.Internals
 			}
 		}
 
-		/// <include file="../../../docs/Microsoft.Maui.Controls.Internals/PropertyPropagationExtensions.xml" path="//Member[@MemberName='PropagatePropertyChanged']/Docs" />
+		/// <include file="../../../docs/Microsoft.Maui.Controls.Internals/PropertyPropagationExtensions.xml" path="//Member[@MemberName='PropagatePropertyChanged']/Docs/*" />
 		public static void PropagatePropertyChanged(string propertyName, Element target, Element source)
 		{
 			if (propertyName == null || propertyName == VisualElement.FlowDirectionProperty.PropertyName)
@@ -40,6 +41,9 @@ namespace Microsoft.Maui.Controls.Internals
 
 			if (propertyName == null || propertyName == VisualElement.VisualProperty.PropertyName)
 				PropagateVisual(target, source);
+
+			if (propertyName == null || propertyName == VisualElement.WindowProperty.PropertyName)
+				PropagateWindow(target, source);
 
 			if (target is IPropertyPropagationController view)
 				view.PropagatePropertyChanged(propertyName);
@@ -89,9 +93,25 @@ namespace Microsoft.Maui.Controls.Internals
 				targetController.EffectiveVisual = sourceController.EffectiveVisual;
 		}
 
-		internal static void SetVisualfromParent(Element child)
+		internal static void SetVisualFromParent(Element child)
 		{
 			PropagateVisual(child, child.Parent);
+		}
+
+		internal static void PropagateWindow(Element target, Element source)
+		{
+			var controller = target as IWindowController;
+			if (controller == null)
+				return;
+
+			var sourceController = source as IWindowController;
+
+			controller.Window = sourceController?.Window;
+		}
+
+		internal static void SetWindowFromParent(Element child)
+		{
+			PropagateWindow(child, child.Parent);
 		}
 	}
 }

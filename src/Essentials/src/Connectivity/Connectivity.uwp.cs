@@ -1,20 +1,21 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Windows.Networking.Connectivity;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Networking
 {
-	public partial class ConnectivityImplementation : IConnectivity
+	partial class ConnectivityImplementation : IConnectivity
 	{
-		public void StartListeners() =>
-			 NetworkInformation.NetworkStatusChanged += NetworkStatusChanged;
+		void StartListeners() =>
+			NetworkInformation.NetworkStatusChanged += NetworkStatusChanged;
 
-		static void NetworkStatusChanged(object sender) =>
-			Connectivity.OnConnectivityChanged();
+		void StopListeners() =>
+			NetworkInformation.NetworkStatusChanged -= NetworkStatusChanged;
 
-		public void StopListeners() =>
-			 NetworkInformation.NetworkStatusChanged -= NetworkStatusChanged;
+		void NetworkStatusChanged(object sender) =>
+			OnConnectivityChanged();
 
 		public NetworkAccess NetworkAccess
 		{
@@ -25,17 +26,13 @@ namespace Microsoft.Maui.Essentials.Implementations
 					return NetworkAccess.Unknown;
 
 				var level = profile.GetNetworkConnectivityLevel();
-				switch (level)
+				return level switch
 				{
-					case NetworkConnectivityLevel.LocalAccess:
-						return NetworkAccess.Local;
-					case NetworkConnectivityLevel.InternetAccess:
-						return NetworkAccess.Internet;
-					case NetworkConnectivityLevel.ConstrainedInternetAccess:
-						return NetworkAccess.ConstrainedInternet;
-					default:
-						return NetworkAccess.None;
-				}
+					NetworkConnectivityLevel.LocalAccess => NetworkAccess.Local,
+					NetworkConnectivityLevel.InternetAccess => NetworkAccess.Internet,
+					NetworkConnectivityLevel.ConstrainedInternetAccess => NetworkAccess.ConstrainedInternet,
+					_ => NetworkAccess.None,
+				};
 			}
 		}
 
@@ -73,8 +70,9 @@ namespace Microsoft.Maui.Essentials.Implementations
 								continue;
 						}
 					}
-					catch (global::System.Exception ex)
+					catch (Exception ex)
 					{
+						// TODO Add Logging?
 						Debug.WriteLine($"Unable to get Network Adapter, returning Unknown: {ex.Message}");
 					}
 

@@ -126,6 +126,18 @@ namespace Microsoft.Maui.DeviceTests
 			});
 
 		[Fact]
+		public Task CreateTimerIsInExpectedState() =>
+			InvokeOnMainThreadAsync(() =>
+			{
+				var dispatcher = Dispatcher.GetForCurrentThread();
+
+				var timer = dispatcher.CreateTimer();
+
+				Assert.False(timer.IsRunning);
+				Assert.True(timer.IsRepeating);
+			});
+
+		[Fact]
 		public Task CreateTimerNonRepeatingDoesNotRepeat() =>
 			InvokeOnMainThreadAsync(async () =>
 			{
@@ -134,6 +146,7 @@ namespace Microsoft.Maui.DeviceTests
 				var ticks = 0;
 
 				var timer = dispatcher.CreateTimer();
+				using var disposer = new TimerDisposer(timer);
 
 				Assert.False(timer.IsRunning);
 
@@ -163,24 +176,54 @@ namespace Microsoft.Maui.DeviceTests
 				var ticks = 0;
 
 				var timer = dispatcher.CreateTimer();
+				using var disposer = new TimerDisposer(timer);
 
-				Assert.False(timer.IsRunning);
+				Assert.False(timer.IsRunning, "Timer was running BEFORE it was started.");
 
 				timer.Interval = TimeSpan.FromMilliseconds(200);
 				timer.IsRepeating = true;
 
+				TaskCompletionSource taskCompletionSource = new TaskCompletionSource();
+
 				timer.Tick += (_, _) =>
 				{
+					Assert.True(timer.IsRunning, "Timer was not running DURING the tick.");
 					ticks++;
+
+					if (ticks > 1)
+						taskCompletionSource.SetResult();
 				};
 
 				timer.Start();
 
-				Assert.True(timer.IsRunning);
+				Assert.True(timer.IsRunning, "Timer was not running AFTER the tick.");
 
-				await Task.Delay(TimeSpan.FromSeconds(1.1));
+				try
+				{
+					await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+				}
+				catch (TaskCanceledException)
+				{
+					// If the task is cancelled we want it to just fall through to the assert
+				}
 
-				Assert.Equal(5, ticks);
+				// If it's repeating, ticks will be greater than 1
+				Assert.True(ticks > 1, $"# of Ticks: {ticks}, expected > 1");
 			});
+
+		class TimerDisposer : IDisposable
+		{
+			IDispatcherTimer _timer;
+
+			public TimerDisposer(IDispatcherTimer timer)
+			{
+				_timer = timer;
+			}
+
+			public void Dispose()
+			{
+				_timer.Stop();
+			}
+		}
 	}
 }

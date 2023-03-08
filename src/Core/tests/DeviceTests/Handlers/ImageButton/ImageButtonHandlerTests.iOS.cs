@@ -41,7 +41,7 @@ namespace Microsoft.Maui.DeviceTests
 		}
 
 		UIButton GetPlatformImageButton(ImageButtonHandler imageButtonHandler) =>
-			   imageButtonHandler.PlatformView;
+			imageButtonHandler.PlatformView;
 
 		UIColor GetNativeStrokeColor(ImageButtonHandler imageButtonHandler)
 		{
@@ -53,12 +53,20 @@ namespace Microsoft.Maui.DeviceTests
 			return UIColor.Clear;
 		}
 
-		Task PerformClick(IButton button)
+		Task PerformClick(IImageButton button)
 		{
 			return InvokeOnMainThreadAsync(() =>
 			{
 				GetPlatformImageButton(CreateHandler(button)).SendActionForControlEvents(UIControlEvent.TouchUpInside);
 			});
 		}
+
+#pragma warning disable CA1416, CA1422
+		UIEdgeInsets GetNativePadding(ImageButtonHandler imageButtonHandler) =>
+			GetPlatformImageButton(imageButtonHandler).ContentEdgeInsets;
+#pragma warning restore CA1416, CA1422
+
+		bool ImageSourceLoaded(ImageButtonHandler imageButtonHandler) =>
+			imageButtonHandler.PlatformView.ImageView.Image != null;
 	}
 }

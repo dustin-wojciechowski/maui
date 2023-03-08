@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using CommunityToolkit.Mvvm.Messaging;
 using Maui.Controls.Sample.Pages.CollectionViewGalleries.CarouselViewGalleries;
 using Microsoft.Maui;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Dispatching;
 
 namespace Maui.Controls.Sample.Pages.CollectionViewGalleries
 {
@@ -53,7 +55,7 @@ namespace Maui.Controls.Sample.Pages.CollectionViewGalleries
 			layout.Children.Add(button);
 
 			button.Clicked += GenerateItems;
-			MessagingCenter.Subscribe<ExampleTemplateCarousel>(this, "remove", (obj) =>
+			WeakReferenceMessenger.Default.Register<ExampleTemplateCarousel, string>(this, "remove", (_, obj) =>
 			{
 				(cv.ItemsSource as ObservableCollection<CollectionViewGalleryTestItem>).Remove(obj.BindingContext as CollectionViewGalleryTestItem);
 			});
@@ -155,14 +157,19 @@ namespace Maui.Controls.Sample.Pages.CollectionViewGalleries
 			}
 		}
 
-		public void GenerateEmptyObservableCollectionAndAddItemsEverySecond()
+		public void GenerateEmptyObservableCollectionAndAddItemsEverySecond(bool resetBeforeAddItems)
 		{
 			if (int.TryParse(_entry.Text, out int count))
 			{
 				var items = new ObservableCollection<CollectionViewGalleryTestItem>();
 				_cv.ItemsSource = items;
-				Device.StartTimer(TimeSpan.FromSeconds(1), () =>
+				Dispatcher.StartTimer(TimeSpan.FromSeconds(1), () =>
 				{
+					//this test a issue with events firing out of order on IOS Obs Source
+					if (resetBeforeAddItems)
+					{
+						items.Clear();
+					}
 					var n = items.Count + 1;
 					items.Add(new CollectionViewGalleryTestItem(DateTime.Now.AddDays(n),
 						$"{_images[n % _images.Length]}, {n}", _images[n % _images.Length], n));

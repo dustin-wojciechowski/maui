@@ -1,5 +1,5 @@
 ﻿using System.Net;
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 
 namespace Microsoft.Maui
 {
@@ -17,6 +17,11 @@ namespace Microsoft.Maui
 		/// When set this will act as a sync for cookies.
 		/// </summary>
 		CookieContainer Cookies { get; }
+
+		/// <summary>
+		/// Gets or sets the WebView's user agent string.
+		/// </summary>
+		string? UserAgent { get; set; }
 
 		/// <summary>
 		/// Gets a value that indicates whether the user can navigate to previous pages.

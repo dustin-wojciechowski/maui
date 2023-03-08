@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
-using WSwipeControl = Microsoft.UI.Xaml.Controls.SwipeControl;
-using WSwipeItems = Microsoft.UI.Xaml.Controls.SwipeItems;
-using WSwipeItem = Microsoft.UI.Xaml.Controls.SwipeItem;
 using Microsoft.Maui.Graphics;
+using WSwipeControl = Microsoft.UI.Xaml.Controls.SwipeControl;
+using WSwipeItem = Microsoft.UI.Xaml.Controls.SwipeItem;
+using WSwipeItems = Microsoft.UI.Xaml.Controls.SwipeItems;
 
 namespace Microsoft.Maui.Handlers
 {
@@ -65,7 +65,7 @@ namespace Microsoft.Maui.Handlers
 		{
 			if (!PlatformView.IsLoaded)
 				return;
-				
+
 			// Setting the Left/Right Items before the view has loaded causes the Swipe Control
 			// to crash on the first layout pass. So we wait until the control has been loaded
 			// before propagating our Left/Right Items
@@ -112,7 +112,7 @@ namespace Microsoft.Maui.Handlers
 
 			try
 			{
-				if(wSwipeItems != null || items.Count > 0)
+				if (wSwipeItems != null || items.Count > 0)
 					setSwipeItems(items);
 			}
 			catch
@@ -176,7 +176,7 @@ namespace Microsoft.Maui.Handlers
 
 			foreach (var item in items)
 			{
-				if (item is ISwipeItemMenuItem &&
+				if (CanAddSwipeItems(swipeItems) && item is ISwipeItemMenuItem &&
 					item.ToHandler(handler.MauiContext!).PlatformView is WSwipeItem swipeItem)
 				{
 					swipeItem.BehaviorOnInvoked = items.SwipeBehaviorOnInvoked.ToPlatform();
@@ -185,6 +185,15 @@ namespace Microsoft.Maui.Handlers
 			}
 
 			return swipeItems;
+		}
+
+		static bool CanAddSwipeItems(WSwipeItems swipeItems)
+		{
+			// On Windows, the SwipeItems can only contain one single SwipeItem using the Execute mode.
+			if (swipeItems.Mode == UI.Xaml.Controls.SwipeMode.Execute && swipeItems.Count > 0)
+				return false;
+
+			return true;
 		}
 
 		static WSwipeItems? GetWindowsSwipeItems(ISwipeItems swipeItems, ISwipeView swipeView, WSwipeControl swipeControl)

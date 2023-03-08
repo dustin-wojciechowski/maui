@@ -5,6 +5,7 @@ using System.Linq;
 using WBrush = Microsoft.UI.Xaml.Media.Brush;
 using WGradientStop = Microsoft.UI.Xaml.Media.GradientStop;
 using WLinearGradientBrush = Microsoft.UI.Xaml.Media.LinearGradientBrush;
+using WPoint = Windows.Foundation.Point;
 using WRadialGradientBrush = Microsoft.UI.Xaml.Media.RadialGradientBrush;
 using WSolidColorBrush = Microsoft.UI.Xaml.Media.SolidColorBrush;
 
@@ -25,7 +26,7 @@ namespace Microsoft.Maui.Graphics
 
 			if (paint is ImagePaint imagePaint)
 				return imagePaint.CreateBrush();
-			
+
 			if (paint is PatternPaint patternPaint)
 				return patternPaint.CreateBrush();
 
@@ -59,6 +60,7 @@ namespace Microsoft.Maui.Graphics
 		{
 			var brush = new WRadialGradientBrush
 			{
+				GradientOrigin = new WPoint(radialGradientPaint.Center.X, radialGradientPaint.Center.Y),
 				Center = radialGradientPaint.Center.ToPlatform(),
 				RadiusX = radialGradientPaint.Radius,
 				RadiusY = radialGradientPaint.Radius
@@ -79,7 +81,7 @@ namespace Microsoft.Maui.Graphics
 			throw new NotImplementedException();
 		}
 
-		static void AddRange(this IList<WGradientStop> nativeStops, IEnumerable<GradientStop> stops)
+		static void AddRange(this IList<WGradientStop> nativeStops, IEnumerable<PaintGradientStop> stops)
 		{
 			foreach (var stop in stops.OrderBy(x => x.Offset))
 			{
@@ -88,6 +90,7 @@ namespace Microsoft.Maui.Graphics
 					Color = stop.Color.ToWindowsColor(),
 					Offset = stop.Offset
 				};
+
 				nativeStops.Add(nativeStop);
 			}
 		}

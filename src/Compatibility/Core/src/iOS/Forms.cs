@@ -17,6 +17,7 @@ using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Controls.Platform;
 using Microsoft.Maui.Animations;
 using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.Versioning;
 
 #if __MOBILE__
 using ObjCRuntime;
@@ -31,7 +32,10 @@ using TNativeView = AppKit.NSView;
 
 namespace Microsoft.Maui.Controls.Compatibility
 {
+	[Obsolete]
+#pragma warning disable CA1815 // Override equals and operator equals on value types
 	public struct InitializationOptions
+#pragma warning restore CA1815 // Override equals and operator equals on value types
 	{
 		public InitializationFlags Flags;
 	}
@@ -48,8 +52,9 @@ namespace Microsoft.Maui.Controls.Compatibility
 		static bool? s_isiOS13OrNewer;
 		static bool? s_isiOS14OrNewer;
 		static bool? s_isiOS15OrNewer;
-		static bool? s_respondsTosetNeedsUpdateOfHomeIndicatorAutoHidden;
 
+		[SupportedOSPlatformGuard("ios11.0")]
+		//[SupportedOSPlatformGuard("tvos11.0")] TODO: the block guarded by this property calling API unsupported on TvOS or version not supported
 		internal static bool IsiOS11OrNewer
 		{
 			get
@@ -70,6 +75,8 @@ namespace Microsoft.Maui.Controls.Compatibility
 			}
 		}
 
+		[SupportedOSPlatformGuard("ios13.0")]
+		//[SupportedOSPlatformGuard("tvos13.0")] TODO: the block guarded by this property calling API unsupported on TvOS or version not supported
 		internal static bool IsiOS13OrNewer
 		{
 			get
@@ -80,6 +87,8 @@ namespace Microsoft.Maui.Controls.Compatibility
 			}
 		}
 
+		[SupportedOSPlatformGuard("ios14.0")]
+		//[SupportedOSPlatformGuard("tvos14.0")] TODO: the block guarded by this property calling API unsupported on TvOS
 		internal static bool IsiOS14OrNewer
 		{
 			get
@@ -90,6 +99,8 @@ namespace Microsoft.Maui.Controls.Compatibility
 			}
 		}
 
+		[SupportedOSPlatformGuard("ios15.0")]
+		[SupportedOSPlatformGuard("tvos15.0")]
 		internal static bool IsiOS15OrNewer
 		{
 			get
@@ -102,20 +113,12 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 		// Once we get essentials/cg converted to using startup.cs
 		// we will delete all the renderer code inside this file
+		[Obsolete]
 		internal static void RenderersRegistered()
 		{
 			IsInitializedRenderers = true;
 		}
 
-		internal static bool RespondsToSetNeedsUpdateOfHomeIndicatorAutoHidden
-		{
-			get
-			{
-				if (!s_respondsTosetNeedsUpdateOfHomeIndicatorAutoHidden.HasValue)
-					s_respondsTosetNeedsUpdateOfHomeIndicatorAutoHidden = new UIViewController().RespondsToSelector(new ObjCRuntime.Selector("setNeedsUpdateOfHomeIndicatorAutoHidden"));
-				return s_respondsTosetNeedsUpdateOfHomeIndicatorAutoHidden.Value;
-			}
-		}
 #else
 
 		static bool? s_isMojaveOrNewer;
@@ -125,18 +128,21 @@ namespace Microsoft.Maui.Controls.Compatibility
 			get
 			{
 				if (!s_isMojaveOrNewer.HasValue)
-					s_isMojaveOrNewer = OperatingSystem.IsMacOSVersionAtLeast (10, 14);
+					s_isMojaveOrNewer = OperatingSystem.IsMacOSVersionAtLeast(10, 14);
 				return s_isMojaveOrNewer.Value;
 			}
 		}
 
 #endif
 
+		[Obsolete]
 		public static bool IsInitializedRenderers { get; private set; }
 
+		[Obsolete]
 		public static void Init(IActivationState activationState, InitializationOptions? options = null) =>
 			SetupInit(activationState.Context, options);
 
+		[Obsolete]
 		static void SetupInit(IMauiContext context, InitializationOptions? maybeOptions = null)
 		{
 			MauiContext = context;
@@ -155,6 +161,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 			IsInitialized = true;
 		}
 
+		[Obsolete]
 		internal static void RegisterCompatRenderers(IMauiContext context)
 		{
 			if (!IsInitializedRenderers)

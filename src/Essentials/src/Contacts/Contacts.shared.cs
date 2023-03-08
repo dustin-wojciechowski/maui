@@ -1,42 +1,58 @@
 #nullable enable
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Maui.Essentials.Implementations;
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.ApplicationModel.Communication
 {
+	/// <summary>
+	/// The Contacts API lets a user pick a contact and retrieve information about it.
+	/// </summary>
 	public interface IContacts
 	{
-		Task<Contact> PickContactAsync();
+		/// <summary>
+		/// Opens the operating system's default UI for picking a contact from the device.
+		/// </summary>
+		/// <returns>A single contact, or <see langword="null"/> if the user cancelled the operation.</returns>
+		Task<Contact?> PickContactAsync();
+
+		/// <summary>
+		/// Gets a collection of all the contacts on the device.
+		/// </summary>
+		/// <param name="cancellationToken">A token that can be used for cancelling the operation.</param>
+		/// <returns>A collection of contacts on the device.</returns>
 		Task<IEnumerable<Contact>> GetAllAsync(CancellationToken cancellationToken = default);
 	}
-	/// <include file="../../docs/Microsoft.Maui.Essentials/Contacts.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Contacts']/Docs" />
+
+	/// <summary>
+	/// The Contacts API lets a user pick a contact and retrieve information about it.
+	/// </summary>
 	public static class Contacts
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Contacts.xml" path="//Member[@MemberName='PickContactAsync']/Docs" />
-		public static async Task<Contact> PickContactAsync()
-		{
-			// iOS does not require permissions for the picker
-			if (DeviceInfo.Platform != DevicePlatform.iOS)
-				await Permissions.EnsureGrantedAsync<Permissions.ContactsRead>();
+		/// <summary>
+		/// Opens the operating system's default UI for picking a contact from the device.
+		/// </summary>
+		/// <returns>A single contact, or <see langword="null"/> if the user cancelled the operation.</returns>
+		public static Task<Contact?> PickContactAsync() =>
+			Default.PickContactAsync();
 
-			return await Current.PickContactAsync();
-		}
+		/// <summary>
+		/// Gets a collection of all the contacts on the device.
+		/// </summary>
+		/// <param name="cancellationToken">A token that can be used for cancelling the operation.</param>
+		/// <returns>A collection of contacts on the device.</returns>
+		public static Task<IEnumerable<Contact>> GetAllAsync(CancellationToken cancellationToken = default) =>
+			Default.GetAllAsync(cancellationToken);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Contacts.xml" path="//Member[@MemberName='GetAllAsync']/Docs" />
-		public static Task<IEnumerable<Contact>> GetAllAsync(CancellationToken cancellationToken = default)
-			=> Current.GetAllAsync(cancellationToken);
+		static IContacts? defaultImplementation;
 
-		static IContacts? currentImplementation;
+		/// <summary>
+		/// Provides the default implementation for static usage of this API.
+		/// </summary>
+		public static IContacts Default =>
+			defaultImplementation ??= new ContactsImplementation();
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static IContacts Current =>
-			currentImplementation ??= new ContactsImplementation();
-
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static void SetCurrent(IContacts? implementation) =>
-			currentImplementation = implementation;
+		internal static void SetDefault(IContacts? implementation) =>
+			defaultImplementation = implementation;
 	}
 }

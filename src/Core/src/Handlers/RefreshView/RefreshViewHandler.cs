@@ -4,7 +4,9 @@ using PlatformView = Microsoft.Maui.Platform.MauiRefreshView;
 using PlatformView = Microsoft.Maui.Platform.MauiSwipeRefreshLayout;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.Controls.RefreshContainer;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformView = Microsoft.Maui.Platform.MauiRefreshLayout;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 
@@ -12,7 +14,7 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class RefreshViewHandler : IRefreshViewHandler
 	{
-		public static PropertyMapper<IRefreshView, IRefreshViewHandler> Mapper = new PropertyMapper<IRefreshView, IRefreshViewHandler>(ViewHandler.ViewMapper)
+		public static IPropertyMapper<IRefreshView, IRefreshViewHandler> Mapper = new PropertyMapper<IRefreshView, IRefreshViewHandler>(ViewHandler.ViewMapper)
 		{
 			[nameof(IRefreshView.IsRefreshing)] = MapIsRefreshing,
 			[nameof(IRefreshView.Content)] = MapContent,
@@ -29,7 +31,13 @@ namespace Microsoft.Maui.Handlers
 		{
 		}
 
-		public RefreshViewHandler(PropertyMapper? mapper = null) : base(mapper ?? Mapper)
+		public RefreshViewHandler(IPropertyMapper? mapper)
+			: base(mapper ?? Mapper, CommandMapper)
+		{
+		}
+
+		public RefreshViewHandler(IPropertyMapper? mapper, CommandMapper? commandMapper)
+			: base(mapper ?? Mapper, commandMapper ?? CommandMapper)
 		{
 		}
 

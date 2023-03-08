@@ -9,7 +9,9 @@ using PlatformView = UIKit.UIView;
 using PlatformView = Android.Views.View;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
-#elif NETSTANDARD
+#elif TIZEN
+using PlatformView = Tizen.NUI.BaseComponents.View;
+#elif (NETSTANDARD || !PLATFORM)
 using PlatformView = System.Object;
 #endif
 
@@ -36,7 +38,6 @@ namespace Microsoft.Maui
 		/// <inheritdoc/>
 		public IReadOnlyCollection<IWindowOverlayElement> WindowElements => _windowElements;
 
-		/// <inheritdoc/>
 		public PlatformView? GraphicsView => _graphicsView;
 
 		/// <inheritdoc/>
@@ -69,13 +70,14 @@ namespace Microsoft.Maui
 		}
 
 		/// <inheritdoc/>
-		public float Density { get; internal set; } = 1;
+		public float Density => Window?.RequestDisplayDensity() ?? 1f;
 
-		/// <inheritdoc/>
+		/// <summary>
+		/// The event handler that is fired whenever the <see cref="WindowOverlay"/> is tapped.
+		/// </summary>
 		public event EventHandler<WindowOverlayTappedEventArgs>? Tapped;
 
-		/// <inheritdoc/>
-		public void Draw(ICanvas canvas, RectangleF dirtyRect)
+		public void Draw(ICanvas canvas, RectF dirtyRect)
 		{
 			if (!IsVisible)
 				return;

@@ -1,130 +1,147 @@
+#nullable enable
 using System;
-using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Storage;
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.ApplicationModel
 {
+	/// <summary>
+	/// The Launcher API enables an application to open a URI by the system.
+	/// This is often used when deep linking into another application's custom URI schemes.
+	/// </summary>
+	/// <remarks>
+	/// <para>If you are looking to open the browser to a website then you should refer to the <see cref="IBrowser"/> API.</para>
+	/// <para>On iOS 9+, you will have to specify the <c>LSApplicationQueriesSchemes</c> key in the <c>info.plist</c> file with URI schemes you want to query from your app.</para>
+	/// </remarks>
 	public interface ILauncher
 	{
-		Task<bool> CanOpenAsync(string uri);
-
+		/// <summary>
+		/// Queries if the device supports opening the given URI scheme.
+		/// </summary>
+		/// <param name="uri">URI scheme to query.</param>
+		/// <returns><see langword="true"/> if opening is supported, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		Task<bool> CanOpenAsync(Uri uri);
 
-		Task<bool> OpenAsync(string uri);
-
+		/// <summary>
+		/// Opens the app specified by the URI scheme.
+		/// </summary>
+		/// <param name="uri">URI to open.</param>
+		/// <returns><see langword="true"/> if the URI was opened, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		Task<bool> OpenAsync(Uri uri);
 
+		/// <summary>
+		/// Requests to open a file in an application based on content type.
+		/// </summary>
+		/// <param name="request">Request that contains information on the file to open.</param>
+		/// <returns><see langword="true"/> if the file was opened, otherwise <see langword="false"/>.</returns>
 		Task<bool> OpenAsync(OpenFileRequest request);
-		
-		Task<bool> TryOpenAsync(string uri);
 
+		/// <summary>
+		/// First checks if the provided URI is supported, then opens the app specified by the URI.
+		/// </summary>
+		/// <param name="uri">URI to try and open.</param>
+		/// <returns><see langword="true"/> if the URI was opened, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		Task<bool> TryOpenAsync(Uri uri);
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/Launcher.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Launcher']/Docs" />
+	/// <summary>
+	/// The Launcher API enables an application to open a URI by the system.
+	/// This is often used when deep linking into another application's custom URI schemes.
+	/// </summary>
+	/// <remarks>
+	/// <para>If you are looking to open the browser to a website then you should refer to the <see cref="IBrowser"/> API.</para>
+	/// <para>On iOS 9+, you will have to specify the <c>LSApplicationQueriesSchemes</c> key in the <c>info.plist</c> file with URI schemes you want to query from your app.</para>
+	/// </remarks>
 	public static partial class Launcher
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Launcher.xml" path="//Member[@MemberName='CanOpenAsync'][0]/Docs" />
+		/// <summary>
+		/// Queries if the device supports opening the given URI scheme.
+		/// </summary>
+		/// <param name="uri">URI scheme to query.</param>
+		/// <returns><see langword="true"/> if opening is supported, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		public static Task<bool> CanOpenAsync(string uri)
 			=> Current.CanOpenAsync(uri);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Launcher.xml" path="//Member[@MemberName='CanOpenAsync'][1]/Docs" />
+		/// <summary>
+		/// Queries if the device supports opening the given URI scheme.
+		/// </summary>
+		/// <param name="uri">URI scheme to query.</param>
+		/// <returns><see langword="true"/> if opening is supported, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		public static Task<bool> CanOpenAsync(Uri uri)
 			=> Current.CanOpenAsync(uri);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Launcher.xml" path="//Member[@MemberName='OpenAsync'][0]/Docs" />
+		/// <summary>
+		/// Opens the app specified by the URI scheme.
+		/// </summary>
+		/// <param name="uri">URI to open.</param>
+		/// <returns><see langword="true"/> if the URI was opened, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		public static Task<bool> OpenAsync(string uri)
 			=> Current.OpenAsync(uri);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Launcher.xml" path="//Member[@MemberName='OpenAsync'][1]/Docs" />
+		/// <summary>
+		/// Opens the app specified by the URI scheme.
+		/// </summary>
+		/// <param name="uri">URI to open.</param>
+		/// <returns><see langword="true"/> if the URI was opened, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		public static Task<bool> OpenAsync(Uri uri)
 			=> Current.OpenAsync(uri);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Launcher.xml" path="//Member[@MemberName='OpenAsync'][2]/Docs" />
+		/// <summary>
+		/// Requests to open a file in an application based on content type.
+		/// </summary>
+		/// <param name="request">Request that contains information on the file to open.</param>
+		/// <returns><see langword="true"/> if the file was opened, otherwise <see langword="false"/>.</returns>
 		public static Task<bool> OpenAsync(OpenFileRequest request)
 			=> Current.OpenAsync(request);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Launcher.xml" path="//Member[@MemberName='TryOpenAsync'][0]/Docs" />
+		/// <summary>
+		/// First checks if the provided URI is supported, then opens the app specified by the URI.
+		/// </summary>
+		/// <param name="uri">URI to try and open.</param>
+		/// <returns><see langword="true"/> if the URI was opened, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		public static Task<bool> TryOpenAsync(string uri)
 			=> Current.TryOpenAsync(uri);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Launcher.xml" path="//Member[@MemberName='TryOpenAsync'][1]/Docs" />
+		/// <summary>
+		/// First checks if the provided URI is supported, then opens the app specified by the URI.
+		/// </summary>
+		/// <param name="uri">URI to try and open.</param>
+		/// <returns><see langword="true"/> if the URI was opened, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
 		public static Task<bool> TryOpenAsync(Uri uri)
 			=> Current.TryOpenAsync(uri);
 
-#nullable enable
-		static ILauncher? currentImplementation;
+		static ILauncher Current => ApplicationModel.Launcher.Default;
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static ILauncher Current =>
-			currentImplementation ??= new Implementations.LauncherImplementation();
+		static ILauncher? defaultImplementation;
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static void SetCurrent(ILauncher? implementation) =>
-			currentImplementation = implementation;
-#nullable disable
+		/// <summary>
+		/// Provides the default implementation for static usage of this API.
+		/// </summary>
+		public static ILauncher Default =>
+			defaultImplementation ??= new LauncherImplementation();
+
+		internal static void SetDefault(ILauncher? implementation) =>
+			defaultImplementation = implementation;
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/OpenFileRequest.xml" path="Type[@FullName='Microsoft.Maui.Essentials.OpenFileRequest']/Docs" />
-	public class OpenFileRequest
+	partial class LauncherImplementation : ILauncher
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/OpenFileRequest.xml" path="//Member[@MemberName='.ctor'][0]/Docs" />
-		public OpenFileRequest()
-		{
-		}
-
-		/// <include file="../../docs/Microsoft.Maui.Essentials/OpenFileRequest.xml" path="//Member[@MemberName='.ctor'][2]/Docs" />
-		public OpenFileRequest(string title, ReadOnlyFile file)
-		{
-			Title = title;
-			File = file;
-		}
-
-		/// <include file="../../docs/Microsoft.Maui.Essentials/OpenFileRequest.xml" path="//Member[@MemberName='.ctor'][1]/Docs" />
-		public OpenFileRequest(string title, FileBase file)
-		{
-			Title = title;
-			File = new ReadOnlyFile(file);
-		}
-
-		/// <include file="../../docs/Microsoft.Maui.Essentials/OpenFileRequest.xml" path="//Member[@MemberName='Title']/Docs" />
-		public string Title { get; set; }
-
-		/// <include file="../../docs/Microsoft.Maui.Essentials/OpenFileRequest.xml" path="//Member[@MemberName='File']/Docs" />
-		public ReadOnlyFile File { get; set; }
-
-		/// <include file="../../docs/Microsoft.Maui.Essentials/OpenFileRequest.xml" path="//Member[@MemberName='PresentationSourceBounds']/Docs" />
-		public Rectangle PresentationSourceBounds { get; set; } = Rectangle.Zero;
-	}
-}
-
-namespace Microsoft.Maui.Essentials.Implementations
-{
-	public partial class LauncherImplementation : ILauncher
-	{
-		public Task<bool> CanOpenAsync(string uri)
-		{
-			if (string.IsNullOrWhiteSpace(uri))
-				throw new ArgumentNullException(nameof(uri));
-
-			return CanOpenAsync(new Uri(uri));
-		}
-
 		public Task<bool> CanOpenAsync(Uri uri)
 		{
 			if (uri == null)
 				throw new ArgumentNullException(nameof(uri));
 
 			return PlatformCanOpenAsync(uri);
-		}
-
-		public Task<bool> OpenAsync(string uri)
-		{
-			if (string.IsNullOrWhiteSpace(uri))
-				throw new ArgumentNullException(nameof(uri));
-
-			return OpenAsync(new Uri(uri));
 		}
 
 		public Task<bool> OpenAsync(Uri uri)
@@ -145,14 +162,6 @@ namespace Microsoft.Maui.Essentials.Implementations
 			return PlatformOpenAsync(request);
 		}
 
-		public Task<bool> TryOpenAsync(string uri)
-		{
-			if (string.IsNullOrWhiteSpace(uri))
-				throw new ArgumentNullException(nameof(uri));
-
-			return TryOpenAsync(new Uri(uri));
-		}
-
 		public Task<bool> TryOpenAsync(Uri uri)
 		{
 			if (uri == null)
@@ -160,5 +169,95 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 			return PlatformTryOpenAsync(uri);
 		}
+	}
+
+	/// <summary>
+	/// Static class with extension methods for the <see cref="ILauncher"/> APIs.
+	/// </summary>
+	public static class LauncherExtensions
+	{
+		/// <summary>
+		/// Queries if the device supports opening the given URI scheme.
+		/// </summary>
+		/// <param name="launcher">The object this method is invoked on.</param>
+		/// <param name="uri">URI scheme to query.</param>
+		/// <returns><see langword="true"/> if opening is supported, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
+		public static Task<bool> CanOpenAsync(this ILauncher launcher, string uri) =>
+			launcher.CanOpenAsync(new Uri(uri));
+
+		/// <summary>
+		/// Opens the app specified by the URI scheme.
+		/// </summary>
+		/// <param name="launcher">The object this method is invoked on.</param>
+		/// <param name="uri">URI to open.</param>
+		/// <returns><see langword="true"/> if the URI was opened, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
+		public static Task<bool> OpenAsync(this ILauncher launcher, string uri) =>
+			launcher.OpenAsync(new Uri(uri));
+
+		/// <summary>
+		/// First checks if the provided URI is supported, then opens the app specified by the URI.
+		/// </summary>
+		/// <param name="launcher">The object this method is invoked on.</param>
+		/// <param name="uri">URI to try and open.</param>
+		/// <returns><see langword="true"/> if the URI was opened, otherwise <see langword="false"/>.</returns>
+		/// <exception cref="UriFormatException">Thrown when <paramref name="uri"/> is malformed.</exception>
+		public static Task<bool> TryOpenAsync(this ILauncher launcher, string uri) =>
+			launcher.TryOpenAsync(new Uri(uri));
+	}
+
+	/// <summary>
+	/// Represents a request for opening a file in another application.
+	/// </summary>
+	public class OpenFileRequest
+	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="OpenFileRequest"/> class.
+		/// </summary>
+		public OpenFileRequest()
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="OpenFileRequest"/> class with the given title and existing file.
+		/// </summary>
+		/// <param name="title">Title to display on open dialog.</param>
+		/// <param name="file">File to open.</param>
+		/// <remarks>The title might not always be displayed on every platform.</remarks>
+		public OpenFileRequest(string title, ReadOnlyFile file)
+		{
+			Title = title;
+			File = file;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="OpenFileRequest"/> class with the given title and existing file.
+		/// </summary>
+		/// <param name="title">Title to display on the open dialog.</param>
+		/// <param name="file">File to open.</param>
+		/// <remarks>The title might not always be displayed on every platform.</remarks>
+		public OpenFileRequest(string title, FileBase file)
+		{
+			Title = title;
+			File = new ReadOnlyFile(file);
+		}
+
+		/// <summary>
+		/// Gets or sets the title to display on the open dialog.
+		/// </summary>
+		/// <remarks>The title might not always be displayed on every platform.</remarks>
+		public string? Title { get; set; }
+
+		/// <summary>
+		/// Gets or sets the file to open through this request.
+		/// </summary>
+		public ReadOnlyFile? File { get; set; }
+
+		/// <summary>
+		/// Gets or sets the source rectangle to display the Share UI from.
+		/// </summary>
+		/// <remarks>This only has effect on iPadOS.</remarks>
+		public Rect PresentationSourceBounds { get; set; } = Rect.Zero;
 	}
 }

@@ -2,9 +2,9 @@ using System;
 using System.Globalization;
 using Foundation;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Storage
 {
-	public class PreferencesImplementation : IPreferences
+	class PreferencesImplementation : IPreferences
 	{
 		static readonly object locker = new object();
 
@@ -47,6 +47,8 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 		public void Set<T>(string key, T value, string sharedName)
 		{
+			Preferences.CheckIsSupportedType<T>();
+
 			lock (locker)
 			{
 				using (var userDefaults = GetUserDefaults(sharedName))
@@ -78,6 +80,10 @@ namespace Microsoft.Maui.Essentials.Implementations
 							break;
 						case float f:
 							userDefaults.SetFloat(f, key);
+							break;
+						case DateTime dt:
+							var encodedDateTime = Convert.ToString(dt.ToBinary(), CultureInfo.InvariantCulture);
+							userDefaults.SetString(encodedDateTime, key);
 							break;
 					}
 				}
@@ -112,6 +118,11 @@ namespace Microsoft.Maui.Essentials.Implementations
 							break;
 						case float f:
 							value = userDefaults.FloatForKey(key);
+							break;
+						case DateTime dt:
+							var savedDateTime = userDefaults.StringForKey(key);
+							var encodedDateTime = Convert.ToInt64(savedDateTime, CultureInfo.InvariantCulture);
+							value = DateTime.FromBinary(encodedDateTime);
 							break;
 						case string s:
 							// the case when the string is not null

@@ -111,9 +111,6 @@ namespace Microsoft.Maui.DeviceTests
 			return (textView.Gravity, textView.TextAlignment);
 		}
 
-		int GetNativeMaxLines(LabelHandler labelHandler) =>
-			GetPlatformLabel(labelHandler).MaxLines;
-
 		(double left, double top, double right, double bottom) GetNativePadding(Android.Views.View view)
 		{
 			return (view.PaddingLeft, view.PaddingTop, view.PaddingRight, view.PaddingBottom);
@@ -122,23 +119,10 @@ namespace Microsoft.Maui.DeviceTests
 		double GetNativeCharacterSpacing(LabelHandler labelHandler) =>
 			Math.Round(GetPlatformLabel(labelHandler).LetterSpacing / UnitExtensions.EmCoefficient, EmCoefficientPrecision);
 
-		TextUtils.TruncateAt GetNativeLineBreakMode(LabelHandler labelHandler) =>
-			GetPlatformLabel(labelHandler).Ellipsize;
-
 		PaintFlags GetNativeTextDecorations(LabelHandler labelHandler) =>
 			GetPlatformLabel(labelHandler).PaintFlags;
 
 		float GetNativeLineHeight(LabelHandler labelHandler) =>
 			GetPlatformLabel(labelHandler).LineSpacingMultiplier;
-
-		Task ValidateHasColor(ILabel label, Color color, Action action = null)
-		{
-			return InvokeOnMainThreadAsync(() =>
-			{
-				var platformLabel = GetPlatformLabel(CreateHandler(label));
-				action?.Invoke();
-				platformLabel.AssertContainsColor(color);
-			});
-		}
 	}
 }

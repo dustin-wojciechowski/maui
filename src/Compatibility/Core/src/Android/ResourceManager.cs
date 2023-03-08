@@ -25,6 +25,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 
 		static Assembly _assembly;
 		[UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Resource.designer.cs is in the root application assembly, which should be preserved.")]
+		[UnconditionalSuppressMessage("Trimming", "IL2073", Justification = "Resource.designer.cs may be linked away, so don't worry if there are missing things.")]
 		[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)]
 		static Type FindType(string name, string altName)
 		{
@@ -176,11 +177,15 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			}
 			catch (OperationCanceledException)
 			{
+#pragma warning disable CS0618 // Type or member is obsolete
 				Application.Current?.FindMauiContext()?.CreateLogger<ImageRenderer>()?.LogWarning("Image load cancelled");
+#pragma warning restore CS0618 // Type or member is obsolete
 			}
 			catch (Exception ex)
 			{
+#pragma warning disable CS0618 // Type or member is obsolete
 				Application.Current?.FindMauiContext()?.CreateLogger<ImageRenderer>()?.LogWarning(ex, "Image load failed");
+#pragma warning restore CS0618 // Type or member is obsolete
 			}
 
 			return null;
@@ -376,7 +381,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 
 		static int IdFromTitle(string title, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type resourceType, string defType, Resources resource)
 		{
+#pragma warning disable CS0612 // Type or member is obsolete
 			return IdFromTitle(title, resourceType, defType, resource, Platform.GetPackageName());
+#pragma warning disable CS0612 // Type or member is obsolete
 		}
 
 		static int IdFromTitle(string title, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] Type resourceType, string defType, Context context)

@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -5,8 +6,8 @@ using Microsoft.Maui.Controls.Internals;
 
 namespace Microsoft.Maui.Controls
 {
-	/// <include file="../../docs/Microsoft.Maui.Controls/ElementTemplate.xml" path="Type[@FullName='Microsoft.Maui.Controls.ElementTemplate']/Docs" />
-	public class ElementTemplate : IElement
+	/// <include file="../../docs/Microsoft.Maui.Controls/ElementTemplate.xml" path="Type[@FullName='Microsoft.Maui.Controls.ElementTemplate']/Docs/*" />
+	public class ElementTemplate : IElementDefinition
 	{
 		List<Action<object, ResourcesChangedEventArgs>> _changeHandlers;
 		Element _parent;
@@ -34,10 +35,9 @@ namespace Microsoft.Maui.Controls
 
 		internal ElementTemplate(Func<object> loadTemplate) : this() => LoadTemplate = loadTemplate ?? throw new ArgumentNullException("loadTemplate");
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/ElementTemplate.xml" path="//Member[@MemberName='LoadTemplate']/Docs" />
 		public Func<object> LoadTemplate { get; set; }
 
-		void IElement.AddResourcesChangedListener(Action<object, ResourcesChangedEventArgs> onchanged)
+		void IElementDefinition.AddResourcesChangedListener(Action<object, ResourcesChangedEventArgs> onchanged)
 		{
 			_changeHandlers = _changeHandlers ?? new List<Action<object, ResourcesChangedEventArgs>>(1);
 			_changeHandlers.Add(onchanged);
@@ -47,7 +47,7 @@ namespace Microsoft.Maui.Controls
 		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 		internal Type Type => _type;
 
-		Element IElement.Parent
+		Element IElementDefinition.Parent
 		{
 			get { return _parent; }
 			set
@@ -55,21 +55,21 @@ namespace Microsoft.Maui.Controls
 				if (_parent == value)
 					return;
 				if (_parent != null)
-					((IElement)_parent).RemoveResourcesChangedListener(OnResourcesChanged);
+					((IElementDefinition)_parent).RemoveResourcesChangedListener(OnResourcesChanged);
 				_parent = value;
 				if (_parent != null)
-					((IElement)_parent).AddResourcesChangedListener(OnResourcesChanged);
+					((IElementDefinition)_parent).AddResourcesChangedListener(OnResourcesChanged);
 			}
 		}
 
-		void IElement.RemoveResourcesChangedListener(Action<object, ResourcesChangedEventArgs> onchanged)
+		void IElementDefinition.RemoveResourcesChangedListener(Action<object, ResourcesChangedEventArgs> onchanged)
 		{
 			if (_changeHandlers == null)
 				return;
 			_changeHandlers.Remove(onchanged);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/ElementTemplate.xml" path="//Member[@MemberName='CreateContent']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/ElementTemplate.xml" path="//Member[@MemberName='CreateContent']/Docs/*" />
 		public object CreateContent()
 		{
 			if (LoadTemplate == null)

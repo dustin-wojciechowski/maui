@@ -4,7 +4,9 @@ using PlatformView = Microsoft.Maui.Platform.LayoutView;
 using PlatformView = Microsoft.Maui.Platform.LayoutViewGroup;
 #elif WINDOWS
 using PlatformView = Microsoft.Maui.Platform.LayoutPanel;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformView = Microsoft.Maui.Platform.LayoutViewGroup;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 

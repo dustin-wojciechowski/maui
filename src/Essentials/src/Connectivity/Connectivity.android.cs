@@ -1,29 +1,40 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Android.App;
 using Android.Content;
 using Android.Net;
-using Android.OS;
+using Microsoft.Maui.ApplicationModel;
 using Debug = System.Diagnostics.Debug;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Networking
 {
-	public partial class ConnectivityImplementation : IConnectivity
+	partial class ConnectivityImplementation : IConnectivity
 	{
-		static ConnectivityBroadcastReceiver conectivityReceiver;
-		static Intent connectivityIntent = new Intent(Platform.EssentialsConnectivityChanged);
-		static EssentialsNetworkCallback networkCallback;
+		/// <summary>
+		/// Unique identifier for the connectivity changed action on Android.
+		/// </summary>
+		public const string ConnectivityChangedAction = "com.maui.essentials.ESSENTIALS_CONNECTIVITY_CHANGED";
+		static Intent connectivityIntent = new Intent(ConnectivityChangedAction);
 
-		public void StartListeners()
+		static ConnectivityManager connectivityManager;
+
+		static ConnectivityManager ConnectivityManager =>
+			connectivityManager ??= Application.Context.GetSystemService(Context.ConnectivityService) as ConnectivityManager;
+
+		ConnectivityBroadcastReceiver conectivityReceiver;
+		EssentialsNetworkCallback networkCallback;
+
+		void StartListeners()
 		{
 			Permissions.EnsureDeclared<Permissions.NetworkState>();
 
 			var filter = new IntentFilter();
 
-			if (Platform.HasApiLevelN)
+			if (OperatingSystem.IsAndroidVersionAtLeast(24))
 			{
 				RegisterNetworkCallback();
-				filter.AddAction(Platform.EssentialsConnectivityChanged);
+				filter.AddAction(ConnectivityChangedAction);
 			}
 			else
 			{
@@ -32,12 +43,12 @@ namespace Microsoft.Maui.Essentials.Implementations
 #pragma warning restore CS0618 // Type or member is obsolete
 			}
 
-			conectivityReceiver = new ConnectivityBroadcastReceiver(Connectivity.OnConnectivityChanged);
+			conectivityReceiver = new ConnectivityBroadcastReceiver(OnConnectivityChanged);
 
-			Platform.AppContext.RegisterReceiver(conectivityReceiver, filter);
+			Application.Context.RegisterReceiver(conectivityReceiver, filter);
 		}
 
-		public void StopListeners()
+		void StopListeners()
 		{
 			if (conectivityReceiver == null)
 				return;
@@ -53,21 +64,23 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 			try
 			{
-				Platform.AppContext.UnregisterReceiver(conectivityReceiver);
+				Application.Context.UnregisterReceiver(conectivityReceiver);
 			}
 			catch (Java.Lang.IllegalArgumentException)
 			{
 				Debug.WriteLine("Connectivity receiver already unregistered. Disposing of it.");
 			}
+
 			conectivityReceiver.Dispose();
 			conectivityReceiver = null;
 		}
+
 		void RegisterNetworkCallback()
 		{
-			if (!Platform.HasApiLevelN)
+			if (!OperatingSystem.IsAndroidVersionAtLeast(24))
 				return;
 
-			var manager = Platform.ConnectivityManager;
+			var manager = ConnectivityManager;
 			if (manager == null)
 				return;
 
@@ -78,10 +91,10 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 		void UnregisterNetworkCallback()
 		{
-			if (!Platform.HasApiLevelN)
+			if (!OperatingSystem.IsAndroidVersionAtLeast(24))
 				return;
 
-			var manager = Platform.ConnectivityManager;
+			var manager = ConnectivityManager;
 			if (manager == null || networkCallback == null)
 				return;
 
@@ -93,17 +106,23 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 		class EssentialsNetworkCallback : ConnectivityManager.NetworkCallback
 		{
-			public override void OnAvailable(Network network) => Platform.AppContext.SendBroadcast(connectivityIntent);
+			public override void OnAvailable(Network network) =>
+				Application.Context.SendBroadcast(connectivityIntent);
 
-			public override void OnLost(Network network) => Platform.AppContext.SendBroadcast(connectivityIntent);
+			public override void OnLost(Network network) =>
+				Application.Context.SendBroadcast(connectivityIntent);
 
-			public override void OnCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) => Platform.AppContext.SendBroadcast(connectivityIntent);
+			public override void OnCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) =>
+				Application.Context.SendBroadcast(connectivityIntent);
 
-			public override void OnUnavailable() => Platform.AppContext.SendBroadcast(connectivityIntent);
+			public override void OnUnavailable() =>
+				Application.Context.SendBroadcast(connectivityIntent);
 
-			public override void OnLinkPropertiesChanged(Network network, LinkProperties linkProperties) => Platform.AppContext.SendBroadcast(connectivityIntent);
+			public override void OnLinkPropertiesChanged(Network network, LinkProperties linkProperties) =>
+				Application.Context.SendBroadcast(connectivityIntent);
 
-			public override void OnLosing(Network network, int maxMsToLive) => Platform.AppContext.SendBroadcast(connectivityIntent);
+			public override void OnLosing(Network network, int maxMsToLive) =>
+				Application.Context.SendBroadcast(connectivityIntent);
 		}
 
 		static NetworkAccess IsBetterAccess(NetworkAccess currentAccess, NetworkAccess newAccess) =>
@@ -118,10 +137,14 @@ namespace Microsoft.Maui.Essentials.Implementations
 				try
 				{
 					var currentAccess = NetworkAccess.None;
-					var manager = Platform.ConnectivityManager;
+					var manager = ConnectivityManager;
 
 #pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1422 // Validate platform compatibility
 					var networks = manager.GetAllNetworks();
+#pragma warning restore CA1422 // Validate platform compatibility
+#pragma warning restore CA1416 // Validate platform compatibility
 #pragma warning restore CS0618 // Type or member is obsolete
 
 					// some devices running 21 and 22 only use the older api.
@@ -141,13 +164,13 @@ namespace Microsoft.Maui.Essentials.Implementations
 								continue;
 
 #pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1422 // Validate platform compatibility
 							var info = manager.GetNetworkInfo(network);
-#pragma warning restore CS0618 // Type or member is obsolete
 
-#pragma warning disable CS0618 // Type or member is obsolete
 							if (info == null || !info.IsAvailable)
-#pragma warning restore CS0618 // Type or member is obsolete
 								continue;
+#pragma warning restore CS0618 // Type or member is obsolete
 
 							// Check to see if it has the internet capability
 							if (!capabilities.HasCapability(NetCapability.Internet))
@@ -180,10 +203,13 @@ namespace Microsoft.Maui.Essentials.Implementations
 					{
 						if (info == null || !info.IsAvailable)
 							return;
+
 						if (info.IsConnected)
 							currentAccess = IsBetterAccess(currentAccess, NetworkAccess.Internet);
 						else if (info.IsConnectedOrConnecting)
 							currentAccess = IsBetterAccess(currentAccess, NetworkAccess.ConstrainedInternet);
+#pragma warning restore CA1422 // Validate platform compatibility
+#pragma warning restore CA1416 // Validate platform compatibility
 #pragma warning restore CS0618 // Type or member is obsolete
 					}
 
@@ -191,6 +217,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 				}
 				catch (Exception e)
 				{
+					// TODO add Logging here
 					Debug.WriteLine("Unable to get connected state - do you have ACCESS_NETWORK_STATE permission? - error: {0}", e);
 					return NetworkAccess.Unknown;
 				}
@@ -203,8 +230,10 @@ namespace Microsoft.Maui.Essentials.Implementations
 			{
 				Permissions.EnsureDeclared<Permissions.NetworkState>();
 
-				var manager = Platform.ConnectivityManager;
+				var manager = ConnectivityManager;
 #pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1422 // Validate platform compatibility
 				var networks = manager.GetAllNetworks();
 #pragma warning restore CS0618 // Type or member is obsolete
 				foreach (var network in networks)
@@ -229,11 +258,15 @@ namespace Microsoft.Maui.Essentials.Implementations
 #pragma warning disable CS0618 // Type or member is obsolete
 				static ConnectionProfile? ProcessNetworkInfo(NetworkInfo info)
 				{
+
 					if (info == null || !info.IsAvailable || !info.IsConnectedOrConnecting)
 						return null;
 
+
 					return GetConnectionType(info.Type, info.TypeName);
 				}
+#pragma warning restore CA1422 // Validate platform compatibility
+#pragma warning restore CA1416 // Validate platform compatibility
 #pragma warning restore CS0618 // Type or member is obsolete
 			}
 		}
@@ -285,17 +318,24 @@ namespace Microsoft.Maui.Essentials.Implementations
 	{
 		Action onChanged;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ConnectivityBroadcastReceiver"/> class.
+		/// </summary>
 		public ConnectivityBroadcastReceiver()
 		{
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ConnectivityBroadcastReceiver"/> class.
+		/// </summary>
+		/// <param name="onChanged">The action that is triggered whenever the connectivity changes.</param>
 		public ConnectivityBroadcastReceiver(Action onChanged) =>
 			this.onChanged = onChanged;
 
 		public override async void OnReceive(Context context, Intent intent)
 		{
 #pragma warning disable CS0618 // Type or member is obsolete
-			if (intent.Action != ConnectivityManager.ConnectivityAction && intent.Action != Platform.EssentialsConnectivityChanged)
+			if (intent.Action != ConnectivityManager.ConnectivityAction && intent.Action != ConnectivityImplementation.ConnectivityChangedAction)
 #pragma warning restore CS0618 // Type or member is obsolete
 				return;
 

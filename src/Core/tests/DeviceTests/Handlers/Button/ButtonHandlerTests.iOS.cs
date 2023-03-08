@@ -57,7 +57,6 @@ namespace Microsoft.Maui.DeviceTests
 			Assert.Equal(UIAccessibilityTrait.Button, trait);
 		}
 
-
 		bool ImageSourceLoaded(ButtonHandler buttonHandler) =>
 			buttonHandler.PlatformView.ImageView.Image != null;
 
@@ -70,8 +69,10 @@ namespace Microsoft.Maui.DeviceTests
 		Color GetNativeTextColor(ButtonHandler buttonHandler) =>
 			GetNativeButton(buttonHandler).CurrentTitleColor.ToColor();
 
+#pragma warning disable CA1416, CA1422
 		UIEdgeInsets GetNativePadding(ButtonHandler buttonHandler) =>
 			GetNativeButton(buttonHandler).ContentEdgeInsets;
+#pragma warning restore CA1416, CA1422
 
 		Task PerformClick(IButton button)
 		{
@@ -85,9 +86,12 @@ namespace Microsoft.Maui.DeviceTests
 		{
 			var button = GetNativeButton(buttonHandler);
 
-			var attributedText = button.TitleLabel.AttributedText;
+			var attributedText = button.GetAttributedTitle(UIControlState.Normal);
 
 			return attributedText.GetCharacterSpacing();
 		}
+
+		UILineBreakMode GetNativeLineBreakMode(ButtonHandler buttonHandler) =>
+			GetNativeButton(buttonHandler).TitleLabel.LineBreakMode;
 	}
 }

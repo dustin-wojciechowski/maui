@@ -14,6 +14,7 @@ using ARect = Android.Graphics.Rect;
 using ATextAlignment = Android.Views.TextAlignment;
 using AView = Android.Views.View;
 using AWebView = Android.Webkit.WebView;
+using SDebug = System.Diagnostics.Debug;
 
 namespace Microsoft.Maui.Platform
 {
@@ -49,14 +50,17 @@ namespace Microsoft.Maui.Platform
 			_context = context;
 
 			_swipeItems = new Dictionary<ISwipeItem, object>();
-			this.SetClipToOutline(true);
+
+			this.SetClipToOutline(Element?.Shadow is not null);
+			SetClipChildren(false);
+			SetClipToPadding(false);
 
 			_density = context.GetActivity()?.Resources?.DisplayMetrics?.Density ?? 0;
 			Control = new AView(_context);
 			AddView(Control, LayoutParams.MatchParent);
 		}
 
-		// temporary workaround to make it work		
+		// temporary workaround to make it work
 		internal void SetElement(ISwipeView swipeView)
 		{
 			Element = swipeView;
@@ -222,8 +226,11 @@ namespace Microsoft.Maui.Platform
 		{
 			if (_contentView != null)
 			{
-				_contentView.RemoveFromParent();
-				_contentView.Dispose();
+				if (!_contentView.IsDisposed())
+				{
+					_contentView.RemoveFromParent();
+					_contentView.Dispose();
+				}
 				_contentView = null;
 			}
 
@@ -233,6 +240,7 @@ namespace Microsoft.Maui.Platform
 			else
 				_contentView = CreateEmptyContent();
 
+			_contentView.RemoveFromParent();
 			AddView(_contentView);
 		}
 
@@ -549,9 +557,15 @@ namespace Microsoft.Maui.Platform
 			}
 
 			AddView(_actionView);
-			_contentView?.BringToFront();
-
-			_actionView.Layout(0, 0, _contentView?.Width ?? 0, _contentView?.Height ?? 0);
+			if (_contentView != null)
+			{
+				_contentView.BringToFront();
+				int contextX = (int)_contentView.GetX();
+				int contentY = (int)_contentView.GetY();
+				int contentWidth = _contentView.Width;
+				int contentHeight = _contentView.Height;
+				_actionView.Layout(contextX, contentY, contextX + contentWidth, contentY + contentHeight);
+			}
 			LayoutSwipeItems(swipeItems);
 			swipeItems.Clear();
 		}
@@ -576,27 +590,45 @@ namespace Microsoft.Maui.Platform
 					var item = items[i];
 					var swipeItemSize = GetSwipeItemSize(item);
 
+					int contentWidth = _contentView.Width;
+					int contentHeight = _contentView.Height;
 					var swipeItemHeight = (int)_context.ToPixels(swipeItemSize.Height);
 					var swipeItemWidth = (int)_context.ToPixels(swipeItemSize.Width);
 
-					int contentX = (int)_contentView.GetX();
-					int contentY = (int)_contentView.GetY();
-
+					int l, t, r, b;
 					switch (_swipeDirection)
 					{
 						case SwipeDirection.Left:
-							child.Layout(contentX + _contentView.Width - (swipeItemWidth + previousWidth), contentY, _contentView.Width - previousWidth + contentX, swipeItemHeight + contentY);
+							// Filling from right to left, align to the top
+							l = contentWidth - previousWidth - swipeItemWidth;
+							t = 0;
+							r = contentWidth - previousWidth;
+							b = swipeItemHeight;
 							break;
 						case SwipeDirection.Right:
-							child.Layout(contentX + previousWidth, contentY, ((i + 1) * swipeItemWidth) + contentX, swipeItemHeight + contentY);
-							break;
 						case SwipeDirection.Down:
-							child.Layout(contentX + previousWidth, contentY, ((i + 1) * swipeItemWidth) + contentX, swipeItemHeight + contentY);
+							// Filling from left to right, align to the top
+							l = previousWidth;
+							t = 0;
+							r = previousWidth + swipeItemWidth;
+							b = swipeItemHeight;
 							break;
-						case SwipeDirection.Up:
-							child.Layout(contentX + previousWidth, contentY + _contentView.Height - swipeItemHeight, ((i + 1) * swipeItemWidth) + contentX, _contentView.Height + contentY);
+						default:
+							SDebug.Assert(_swipeDirection == SwipeDirection.Up);
+							// Filling from left to right, align to the bottom
+							l = previousWidth;
+							t = contentHeight - swipeItemHeight;
+							r = previousWidth + swipeItemWidth;
+							b = contentHeight;
 							break;
 					}
+
+					child.Measure(
+						MeasureSpec.MakeMeasureSpec(swipeItemWidth, MeasureSpecMode.AtMost),
+						MeasureSpec.MakeMeasureSpec(swipeItemHeight, MeasureSpecMode.AtMost)
+					);
+
+					child.Layout(l, t, r, b);
 
 					i++;
 					previousWidth += swipeItemWidth;
@@ -640,6 +672,12 @@ namespace Microsoft.Maui.Platform
 
 		void UpdateSwipeItemViewLayout(ISwipeItemView swipeItemView)
 		{
+			if (swipeItemView?.Handler is not IPlatformViewHandler handler)
+				return;
+
+			var swipeItemSize = GetSwipeItemSize(swipeItemView);
+			handler.LayoutVirtualView(0, 0, (int)swipeItemSize.Width, (int)swipeItemSize.Height);
+
 			swipeItemView?.Handler?.ToPlatform().InvalidateMeasure(swipeItemView);
 		}
 
@@ -1132,11 +1170,6 @@ namespace Microsoft.Maui.Platform
 
 			if (isHorizontal)
 			{
-				if (swipeItem is ISwipeItem)
-				{
-					return new Size(items.Mode == SwipeMode.Execute ? (threshold > 0 ? threshold : contentWidth) / items.Count : (threshold < SwipeViewExtensions.SwipeItemWidth ? SwipeViewExtensions.SwipeItemWidth : threshold), contentHeight);
-				}
-
 				if (swipeItem is ISwipeItemView horizontalSwipeItemView)
 				{
 					var swipeItemViewSizeRequest = horizontalSwipeItemView.Measure(double.PositiveInfinity, double.PositiveInfinity);
@@ -1150,15 +1183,14 @@ namespace Microsoft.Maui.Platform
 
 					return new Size(swipeItemWidth, contentHeight);
 				}
+
+				if (swipeItem is ISwipeItem)
+				{
+					return new Size(items.Mode == SwipeMode.Execute ? (threshold > 0 ? threshold : contentWidth) / items.Count : (threshold < SwipeViewExtensions.SwipeItemWidth ? SwipeViewExtensions.SwipeItemWidth : threshold), contentHeight);
+				}
 			}
 			else
 			{
-				if (swipeItem is ISwipeItem)
-				{
-					var swipeItemHeight = GetSwipeItemHeight();
-					return new Size(contentWidth / items.Count, (threshold > 0 && threshold < swipeItemHeight) ? threshold : swipeItemHeight);
-				}
-
 				if (swipeItem is ISwipeItemView verticalSwipeItemView)
 				{
 					var swipeItemViewSizeRequest = verticalSwipeItemView.Measure(double.PositiveInfinity, double.PositiveInfinity);
@@ -1171,6 +1203,12 @@ namespace Microsoft.Maui.Platform
 						swipeItemHeight = threshold > contentHeight ? threshold : contentHeight;
 
 					return new Size(contentWidth / items.Count, swipeItemHeight);
+				}
+
+				if (swipeItem is ISwipeItem)
+				{
+					var swipeItemHeight = GetSwipeItemHeight();
+					return new Size(contentWidth / items.Count, (threshold > 0 && threshold < swipeItemHeight) ? threshold : swipeItemHeight);
 				}
 			}
 

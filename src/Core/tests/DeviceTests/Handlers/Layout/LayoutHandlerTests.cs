@@ -7,8 +7,30 @@ using Xunit;
 namespace Microsoft.Maui.DeviceTests.Handlers.Layout
 {
 	[Category(TestCategory.Layout)]
-	public partial class LayoutHandlerTests : HandlerTestBase<LayoutHandler, LayoutStub>
+	public partial class LayoutHandlerTests : CoreHandlerTestBase<LayoutHandler, LayoutStub>
 	{
+		[Fact(DisplayName = "Shadow Initializes Correctly",
+			Skip = "This test is currently invalid https://github.com/dotnet/maui/issues/13692")]
+		public async Task ShadowInitializesCorrectly()
+		{
+			var xPlatShadow = new ShadowStub
+			{
+				Offset = new Point(10, 10),
+				Opacity = 1.0f,
+				Radius = 2.0f
+			};
+
+			var layout = new LayoutStub
+			{
+				Height = 50,
+				Width = 50
+			};
+
+			layout.Shadow = xPlatShadow;
+
+			await ValidateHasColor(layout, Colors.Red, () => xPlatShadow.Paint = new SolidPaint(Colors.Red));
+		}
+
 		[Fact(DisplayName = "Empty layout")]
 		public async Task EmptyLayout()
 		{
@@ -224,7 +246,7 @@ namespace Microsoft.Maui.DeviceTests.Handlers.Layout
 			await InvokeOnMainThreadAsync(() =>
 			{
 				var handler = new LabelHandler();
-				InitializeViewHandler(label, handler, MauiContext);
+				InitializeViewHandler(label, handler);
 			});
 		}
 
@@ -345,6 +367,50 @@ namespace Microsoft.Maui.DeviceTests.Handlers.Layout
 
 			// Verify the views are in the correct order
 			await AssertZIndexOrder(handler);
+		}
+
+		[Fact]
+		public async Task MeasureMatchesExplicitValues()
+		{
+			var layout = new LayoutStub();
+
+			var content = new SliderStub
+			{
+				DesiredSize = new Size(50, 50)
+			};
+
+			layout.Add(content);
+			layout.Width = 100;
+			layout.Height = 150;
+
+			var contentViewHandler = await CreateHandlerAsync(layout);
+
+			var measure = await InvokeOnMainThreadAsync(() => layout.Measure(double.PositiveInfinity, double.PositiveInfinity));
+
+			Assert.Equal(layout.Width, measure.Width, 0);
+			Assert.Equal(layout.Height, measure.Height, 0);
+		}
+
+		[Fact]
+		public async Task RespectsMinimumValues()
+		{
+			var layout = new LayoutStub();
+
+			var content = new SliderStub
+			{
+				DesiredSize = new Size(50, 50)
+			};
+
+			layout.Add(content);
+			layout.MinimumWidth = 100;
+			layout.MinimumHeight = 150;
+
+			var contentViewHandler = await CreateHandlerAsync(layout);
+
+			var measure = await InvokeOnMainThreadAsync(() => layout.Measure(double.PositiveInfinity, double.PositiveInfinity));
+
+			Assert.Equal(layout.MinimumWidth, measure.Width, 0);
+			Assert.Equal(layout.MinimumHeight, measure.Height, 0);
 		}
 	}
 }

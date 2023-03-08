@@ -1,11 +1,13 @@
-﻿	#nullable enable
+﻿#nullable enable
 #if __IOS__ || MACCATALYST
 using PlatformView = Microsoft.Maui.Platform.ContentView;
 #elif __ANDROID__
 using PlatformView = Microsoft.Maui.Platform.ContentViewGroup;
 #elif WINDOWS
 using PlatformView = Microsoft.Maui.Platform.ContentPanel;
-#elif NETSTANDARD
+#elif TIZEN
+using PlatformView = Microsoft.Maui.Platform.ContentViewGroup;
+#elif (NETSTANDARD || !PLATFORM)
 using PlatformView = System.Object;
 #endif
 
@@ -15,6 +17,10 @@ namespace Microsoft.Maui.Handlers
 	{
 		public static IPropertyMapper<IBorderView, IBorderHandler> Mapper = new PropertyMapper<IBorderView, IBorderHandler>(ViewMapper)
 		{
+#if __ANDROID__
+			[nameof(IContentView.Height)] = MapHeight,
+			[nameof(IContentView.Width)] = MapWidth,
+#endif
 			[nameof(IContentView.Background)] = MapBackground,
 			[nameof(IContentView.Content)] = MapContent,
 			[nameof(IBorderStroke.Shape)] = MapStrokeShape,
@@ -36,14 +42,14 @@ namespace Microsoft.Maui.Handlers
 
 		}
 
-		protected BorderHandler(IPropertyMapper mapper, CommandMapper? commandMapper = null)
-			: base(mapper, commandMapper ?? ViewCommandMapper)
+		public BorderHandler(IPropertyMapper? mapper)
+			: base(mapper ?? Mapper, CommandMapper)
 		{
 		}
 
-		public BorderHandler(IPropertyMapper? mapper = null) : base(mapper ?? Mapper)
+		public BorderHandler(IPropertyMapper? mapper, CommandMapper? commandMapper)
+			: base(mapper ?? Mapper, commandMapper ?? CommandMapper)
 		{
-
 		}
 
 		IBorderView IBorderHandler.VirtualView => VirtualView;

@@ -1,14 +1,15 @@
-﻿using Microsoft.Maui.Graphics;
+﻿#nullable disable
+using Microsoft.Maui.Graphics;
 using Microsoft.Maui.HotReload;
 using Microsoft.Maui.Layouts;
 
 namespace Microsoft.Maui.Controls
 {
-	/// <include file="../../../docs/Microsoft.Maui.Controls/ContentPage.xml" path="Type[@FullName='Microsoft.Maui.Controls.ContentPage']/Docs" />
+	/// <include file="../../../docs/Microsoft.Maui.Controls/ContentPage.xml" path="Type[@FullName='Microsoft.Maui.Controls.ContentPage']/Docs/*" />
 	public partial class ContentPage : IContentView, HotReload.IHotReloadableView
 	{
 		object IContentView.Content => Content;
-		IView IContentView.PresentedContent => Content;
+		IView IContentView.PresentedContent => ((this as IControlTemplated).TemplateRoot as IView) ?? Content;
 
 		protected override Size MeasureOverride(double widthConstraint, double heightConstraint)
 		{
@@ -16,7 +17,7 @@ namespace Microsoft.Maui.Controls
 			return DesiredSize;
 		}
 
-		protected override Size ArrangeOverride(Rectangle bounds)
+		protected override Size ArrangeOverride(Rect bounds)
 		{
 			Frame = this.ComputeFrame(bounds);
 			Handler?.PlatformArrange(Frame);
@@ -29,7 +30,7 @@ namespace Microsoft.Maui.Controls
 			return new Size(widthConstraint, heightConstraint);
 		}
 
-		Size IContentView.CrossPlatformArrange(Rectangle bounds)
+		Size IContentView.CrossPlatformArrange(Rect bounds)
 		{
 			Frame = bounds;
 			this.ArrangeContent(bounds);
@@ -61,7 +62,7 @@ namespace Microsoft.Maui.Controls
 
 		void HotReload.IHotReloadableView.Reload()
 		{
-			Device.BeginInvokeOnMainThread(() =>
+			Dispatcher.Dispatch(() =>
 			{
 				this.CheckHandlers();
 				var reloadHandler = ((IHotReloadableView)this).ReloadHandler;

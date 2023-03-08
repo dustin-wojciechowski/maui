@@ -1,12 +1,12 @@
 ﻿using System;
+using System.IO;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.Maui.Graphics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.Extensions.DependencyInjection;
-using System.IO;
 
 namespace Microsoft.Maui.Platform
 {
@@ -62,6 +62,8 @@ namespace Microsoft.Maui.Platform
 
 				if (fontImageSource.Color != null)
 					image.Foreground = fontImageSource.Color.ToPlatform();
+				else
+					image.Foreground = Colors.White.ToPlatform();
 
 				var fontManager = mauiContext.Services.GetRequiredService<IFontManager>();
 				var uwpFontFamily = fontManager.GetFontFamily(fontImageSource.Font);

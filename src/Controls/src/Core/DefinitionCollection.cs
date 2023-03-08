@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,11 +7,11 @@ namespace Microsoft.Maui.Controls
 {
 	public class DefinitionCollection<T> : IList<T>, ICollection<T> where T : IDefinition
 	{
-		readonly List<T> _internalList = new List<T>();
+		readonly List<T> _internalList;
 
-		internal DefinitionCollection()
-		{
-		}
+		internal DefinitionCollection() => _internalList = new List<T>();
+
+		internal DefinitionCollection(params T[] items) => _internalList = new List<T>(items);
 
 		public void Add(T item)
 		{

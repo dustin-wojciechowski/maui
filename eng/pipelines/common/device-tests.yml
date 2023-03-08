@@ -1,11 +1,10 @@
 parameters:
-  androidVmPool: '$(androidTestsVmPool)'
-  androidVmImage: '$(androidTestsVmImage)'
-  iosVmPool: '$(iosTestsVmPool)'
-  iosVmImage: '$(iosTestsVmImage)'
+  androidPool: { }
+  iosPool: { }
   androidApiLevels: [ 30 ]
   iosVersions: [ 'latest' ]
   provisionatorChannel: 'latest'
+  agentPoolAccessToken: ''
   projects:
     - name: name
       desc: Human Description
@@ -26,14 +25,7 @@ stages:
                 workspace:
                   clean: all
                 displayName: ${{ coalesce(project.desc, project.name) }} (API ${{ api }})
-                pool:
-                  name: ${{ parameters.androidVmPool }}
-                  vmImage: ${{ parameters.androidVmImage }}
-                  demands:
-                    - macOS.Name -equals BigSur
-                    - macOS.Architecture -equals x64
-                    - Agent.HasDevices -equals False
-                    - Agent.IsPaired -equals False
+                pool: ${{ parameters.androidPool }}
                 variables:
                   ${{ if ge(api, 24) }}:
                     ANDROID_EMULATORS: "system-images;android-${{ api }};google_apis_playstore;x86"
@@ -47,6 +39,7 @@ stages:
                       path: ${{ project.android }}
                       device: android-emulator-32_${{ api }}
                       provisionatorChannel: ${{ parameters.provisionatorChannel }}
+                      agentPoolAccessToken: ${{ parameters.agentPoolAccessToken }}
 
   - stage: ios_device_tests
     displayName: iOS Device Tests
@@ -60,14 +53,7 @@ stages:
                 workspace:
                   clean: all
                 displayName: ${{ coalesce(project.desc, project.name) }} (v${{ version }})
-                pool:
-                  name: ${{ parameters.iosVmPool }}
-                  vmImage: ${{ parameters.iosVmImage }}
-                  demands:
-                    - macOS.Name -equals BigSur
-                    - macOS.Architecture -equals x64
-                    - Agent.HasDevices -equals False
-                    - Agent.IsPaired -equals False
+                pool: ${{ parameters.iosPool }}
                 variables:
                   REQUIRED_XCODE: $(DEVICETESTS_REQUIRED_XCODE)
                 steps:
@@ -80,3 +66,4 @@ stages:
                       ${{ if ne(version, 'latest') }}:
                         device: ios-simulator-64_${{ version }}
                       provisionatorChannel: ${{ parameters.provisionatorChannel }}
+                      agentPoolAccessToken: ${{ parameters.agentPoolAccessToken }}

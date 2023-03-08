@@ -12,6 +12,9 @@ namespace Maui.Controls.Sample.ViewModels
 			new SectionModel(typeof(ActivityIndicatorPage), "ActivityIndicator",
 				"Displays an animation to show that the application is engaged in a lengthy activity."),
 
+			new SectionModel(typeof(BorderPage), "Border",
+				"Draws a border around a View."),
+
 			new SectionModel(typeof(BoxViewPage), "BoxView",
 				"BoxView renders a simple rectangle of a specified width, height, and color. You can use BoxView for decoration, rudimentary graphics, and for interaction with the user through touch."),
 
@@ -47,6 +50,9 @@ namespace Maui.Controls.Sample.ViewModels
 
 			new SectionModel(typeof(LabelPage), "Label",
 				"The Label view is used for displaying text, both single and multi-line."),
+
+			new SectionModel(typeof(Pages.MapsGalleries.MapsGallery), "Maps",
+				"The Maps controls is used for showing a map including pins, traffic information, etc."),
 
 			new SectionModel(typeof(PickerPage), "Picker",
 				"The Picker view is a control for selecting a text item from a list of data."),

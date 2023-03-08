@@ -203,7 +203,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			var position = Control.GetPositionForView(viewCell);
 			var id = Control.GetItemIdAtPosition(position);
 
+#pragma warning disable CA1416 // Introduced in API 23: https://developer.android.com/reference/android/view/HapticFeedbackConstants#CONTEXT_CLICK
 			viewCell.PerformHapticFeedback(FeedbackConstants.ContextClick);
+#pragma warning restore CA1416
 			_adapter.OnItemClick(Control, viewCell, position, id);
 		}
 
@@ -217,7 +219,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			var position = Control.GetPositionForView(viewCell);
 			var id = Control.GetItemIdAtPosition(position);
 
+#pragma warning disable CA1416 // Introduced in API 23: https://developer.android.com/reference/android/view/HapticFeedbackConstants#CONTEXT_CLICK
 			viewCell.PerformHapticFeedback(FeedbackConstants.ContextClick);
+#pragma warning restore CA1416
 			_adapter.OnItemLongClick(Control, viewCell, position, id);
 		}
 
@@ -543,7 +547,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 				var width = (int)ctx.FromPixels(MeasureSpecFactory.GetSize(widthMeasureSpec));
 
 				SizeRequest request = element.Measure(width, double.PositiveInfinity, MeasureFlags.IncludeMargins);
-				Microsoft.Maui.Controls.Compatibility.Layout.LayoutChildIntoBoundingRegion(element, new Rectangle(0, 0, width, request.Request.Height));
+				Microsoft.Maui.Controls.Compatibility.Layout.LayoutChildIntoBoundingRegion(element, new Rect(0, 0, width, request.Request.Height));
 
 				int widthSpec = MeasureSpecFactory.MakeMeasureSpec((int)ctx.ToPixels(width), MeasureSpecMode.Exactly);
 				int heightSpec = MeasureSpecFactory.MakeMeasureSpec((int)ctx.ToPixels(request.Request.Height), MeasureSpecMode.Exactly);

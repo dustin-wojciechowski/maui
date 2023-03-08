@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,10 +11,9 @@ using static System.String;
 
 namespace Microsoft.Maui.Controls.Internals
 {
-	/// <include file="../../docs/Microsoft.Maui.Controls.Internals/PlatformBindingHelpers.xml" path="Type[@FullName='Microsoft.Maui.Controls.Internals.PlatformBindingHelpers']/Docs" />	
+	/// <include file="../../docs/Microsoft.Maui.Controls.Internals/PlatformBindingHelpers.xml" path="Type[@FullName='Microsoft.Maui.Controls.Internals.PlatformBindingHelpers']/Docs/*" />	
 	internal static class PlatformBindingHelpers
 	{
-		/// <include file="../../docs/Microsoft.Maui.Controls.Internals/PlatformBindingHelpers.xml" path="//Member[@MemberName='SetBinding']/Docs" />
 		public static void SetBinding<TPlatformView>(TPlatformView target, string targetProperty, BindingBase bindingBase, string updateSourceEventName = null) where TPlatformView : class
 		{
 			var binding = bindingBase as Binding;
@@ -27,7 +27,6 @@ namespace Microsoft.Maui.Controls.Internals
 			SetBinding(target, targetProperty, bindingBase, eventWrapper);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls.Internals/PlatformBindingHelpers.xml" path="//Member[@MemberName='SetBinding']/Docs" />
 		public static void SetBinding<TPlatformView>(TPlatformView target, string targetProperty, BindingBase bindingBase, INotifyPropertyChanged propertyChanged) where TPlatformView : class
 		{
 			if (target == null)
@@ -39,8 +38,9 @@ namespace Microsoft.Maui.Controls.Internals
 			var proxy = BindableObjectProxy<TPlatformView>.BindableObjectProxies.GetValue(target, (TPlatformView key) => new BindableObjectProxy<TPlatformView>(key));
 			BindableProperty bindableProperty = null;
 			propertyChanged = propertyChanged ?? target as INotifyPropertyChanged;
-			var propertyType = target.GetType().GetProperty(targetProperty)?.PropertyType;
-			var defaultValue = target.GetType().GetProperty(targetProperty)?.GetMethod.Invoke(target, new object[] { });
+			var targetPropertyInfo = target.GetType().GetProperty(targetProperty);
+			var propertyType = targetPropertyInfo?.PropertyType;
+			var defaultValue = targetPropertyInfo?.GetMethod.Invoke(target, Array.Empty<object>());
 			bindableProperty = CreateBindableProperty<TPlatformView>(targetProperty, propertyType, defaultValue);
 			if (binding != null && binding.Mode != BindingMode.OneWay && propertyChanged != null)
 				propertyChanged.PropertyChanged += (sender, e) =>
@@ -61,7 +61,7 @@ namespace Microsoft.Maui.Controls.Internals
 		static BindableProperty CreateBindableProperty<TPlatformView>(string targetProperty, Type propertyType = null, object defaultValue = null) where TPlatformView : class
 		{
 			propertyType = propertyType ?? typeof(object);
-			defaultValue = defaultValue ?? (propertyType.GetTypeInfo().IsValueType ? Activator.CreateInstance(propertyType) : null);
+			defaultValue = defaultValue ?? (propertyType.IsValueType ? Activator.CreateInstance(propertyType) : null);
 			return BindableProperty.Create(
 				targetProperty,
 				propertyType,
@@ -98,7 +98,6 @@ namespace Microsoft.Maui.Controls.Internals
 			bindable.SetValueCore(property, value);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls.Internals/PlatformBindingHelpers.xml" path="//Member[@MemberName='SetBinding']/Docs" />
 		public static void SetBinding<TPlatformView>(TPlatformView target, BindableProperty targetProperty, BindingBase binding) where TPlatformView : class
 		{
 			if (target == null)
@@ -112,7 +111,6 @@ namespace Microsoft.Maui.Controls.Internals
 			proxy.BindingsBackpack.Add(new KeyValuePair<BindableProperty, BindingBase>(targetProperty, binding));
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls.Internals/PlatformBindingHelpers.xml" path="//Member[@MemberName='SetValue']/Docs" />
 		public static void SetValue<TPlatformView>(TPlatformView target, BindableProperty targetProperty, object value) where TPlatformView : class
 		{
 			if (target == null)
@@ -124,7 +122,6 @@ namespace Microsoft.Maui.Controls.Internals
 			proxy.ValuesBackpack.Add(new KeyValuePair<BindableProperty, object>(targetProperty, value));
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls.Internals/PlatformBindingHelpers.xml" path="//Member[@MemberName='SetBindingContext']/Docs" />
 		public static void SetBindingContext<TPlatformView>(TPlatformView target, object bindingContext, Func<TPlatformView, IEnumerable<TPlatformView>> getChild = null) where TPlatformView : class
 		{
 			if (target == null)
@@ -142,7 +139,6 @@ namespace Microsoft.Maui.Controls.Internals
 					SetBindingContext(child, bindingContext, getChild);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls.Internals/PlatformBindingHelpers.xml" path="//Member[@MemberName='TransferBindablePropertiesToWrapper']/Docs" />
 		public static void TransferBindablePropertiesToWrapper<TPlatformView, TPlatformWrapper>(TPlatformView platformView, TPlatformWrapper wrapper)
 			where TPlatformView : class
 			where TPlatformWrapper : View

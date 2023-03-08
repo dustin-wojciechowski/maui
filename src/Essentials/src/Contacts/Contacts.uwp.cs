@@ -5,13 +5,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Contacts;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.ApplicationModel.Communication
 {
-	public class ContactsImplementation:IContacts
+	class ContactsImplementation : IContacts
 	{
 		public async Task<Contact> PickContactAsync()
 		{
 			var contactPicker = new ContactPicker();
+
+			var hwnd = WindowStateManager.Default.GetActiveWindowHandle(true);
+			WinRT.Interop.InitializeWithWindow.Initialize(contactPicker, hwnd);
+
 			var contactSelected = await contactPicker.PickContactAsync();
 			return ConvertContact(contactSelected);
 		}

@@ -1,33 +1,35 @@
+#nullable disable
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Microsoft.Maui.Graphics;
 
 namespace Microsoft.Maui.Controls
 {
-	/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="Type[@FullName='Microsoft.Maui.Controls.Region']/Docs" />
-	public struct Region
+	/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="Type[@FullName='Microsoft.Maui.Controls.Region']/Docs/*" />
+	public struct Region : IEquatable<Region>
 	{
 		// While Regions are currently rectangular, they could in the future be transformed into any shape.
 		// As such the internals of how it keeps shapes is hidden, so that future internal changes can occur to support shapes
 		// such as circles if required, without affecting anything else.
 
-		IReadOnlyList<Rectangle> Regions { get; }
+		IReadOnlyList<Rect> Regions { get; }
 		readonly Thickness? _inflation;
 
-		Region(IList<Rectangle> positions) : this()
+		Region(IList<Rect> positions) : this()
 		{
-			Regions = new ReadOnlyCollection<Rectangle>(positions);
+			Regions = new ReadOnlyCollection<Rect>(positions);
 		}
 
-		Region(IList<Rectangle> positions, Thickness inflation) : this(positions)
+		Region(IList<Rect> positions, Thickness inflation) : this(positions)
 		{
 			_inflation = inflation;
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='FromLines']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='FromLines']/Docs/*" />
 		public static Region FromLines(double[] lineHeights, double maxWidth, double startX, double endX, double startY)
 		{
-			var positions = new List<Rectangle>();
+			var positions = new List<Rect>();
 			var endLine = lineHeights.Length - 1;
 			var lineHeightTotal = startY;
 
@@ -35,29 +37,29 @@ namespace Microsoft.Maui.Controls
 				if (endLine != 0) // MultiLine
 				{
 					if (i == 0) // First Line
-						positions.Add(new Rectangle(startX, lineHeightTotal, maxWidth - startX, lineHeights[i]));
+						positions.Add(new Rect(startX, lineHeightTotal, maxWidth - startX, lineHeights[i]));
 
 					else if (i != endLine) // Middle Line
-						positions.Add(new Rectangle(0, lineHeightTotal, maxWidth, lineHeights[i]));
+						positions.Add(new Rect(0, lineHeightTotal, maxWidth, lineHeights[i]));
 
 					else // End Line
-						positions.Add(new Rectangle(0, lineHeightTotal, endX, lineHeights[i]));
+						positions.Add(new Rect(0, lineHeightTotal, endX, lineHeights[i]));
 
 					lineHeightTotal += lineHeights[i];
 				}
 				else // SingleLine
-					positions.Add(new Rectangle(startX, lineHeightTotal, endX - startX, lineHeights[i]));
+					positions.Add(new Rect(startX, lineHeightTotal, endX - startX, lineHeights[i]));
 
 			return new Region(positions);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Contains'][0]/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Contains'][1]/Docs/*" />
 		public bool Contains(Point pt)
 		{
 			return Contains(pt.X, pt.Y);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Contains'][1]/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Contains'][2]/Docs/*" />
 		public bool Contains(double x, double y)
 		{
 			if (Regions == null)
@@ -70,7 +72,7 @@ namespace Microsoft.Maui.Controls
 			return false;
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Deflate']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Deflate']/Docs/*" />
 		public Region Deflate()
 		{
 			if (_inflation == null)
@@ -79,19 +81,19 @@ namespace Microsoft.Maui.Controls
 			return Inflate(_inflation.Value.Left * -1, _inflation.Value.Top * -1, _inflation.Value.Right * -1, _inflation.Value.Bottom * -1);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Inflate'][0]/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Inflate'][1]/Docs/*" />
 		public Region Inflate(double size)
 		{
 			return Inflate(size, size, size, size);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Inflate'][1]/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Region.xml" path="//Member[@MemberName='Inflate'][2]/Docs/*" />
 		public Region Inflate(double left, double top, double right, double bottom)
 		{
 			if (Regions == null)
 				return this;
 
-			Rectangle[] rectangles = new Rectangle[Regions.Count];
+			Rect[] rectangles = new Rect[Regions.Count];
 			for (int i = 0; i < Regions.Count; i++)
 			{
 				var region = Regions[i];
@@ -115,5 +117,16 @@ namespace Microsoft.Maui.Controls
 
 			return new Region(rectangles, inflation);
 		}
+
+		public bool Equals(Region other) =>
+			Regions == other.Regions && _inflation == other._inflation;
+
+		public override bool Equals(object obj) => obj is Region other && Equals(other);
+
+		public override int GetHashCode() => Regions.GetHashCode() ^ _inflation?.GetHashCode() ?? 0;
+
+		public static bool operator ==(Region left, Region right) => left.Equals(right);
+
+		public static bool operator !=(Region left, Region right) => !(left == right);
 	}
 }

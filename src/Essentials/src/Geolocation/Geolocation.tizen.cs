@@ -1,22 +1,29 @@
+#nullable enable
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Maui.ApplicationModel;
 using Tizen.Location;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Devices.Sensors
 {
-	public partial class GeolocationImplementation : IGeolocation
+	partial class GeolocationImplementation : IGeolocation
 	{
 		Location lastKnownLocation = new Location();
 
-		public Task<Location> GetLastKnownLocationAsync() => Task.FromResult(lastKnownLocation);
+		public bool IsListeningForeground { get => false; }
 
-		public async Task<Location> GetLocationAsync(GeolocationRequest request, CancellationToken cancellationToken)
+		public Task<Location?> GetLastKnownLocationAsync() => Task.FromResult<Location?>(lastKnownLocation);
+
+		public async Task<Location?> GetLocationAsync(GeolocationRequest request, CancellationToken cancellationToken)
 		{
+			ArgumentNullException.ThrowIfNull(request);
+
 			await Permissions.EnsureGrantedAsync<Permissions.LocationWhenInUse>();
 
-			Locator service = null;
-			var gps = Platform.GetFeatureInfo<bool>("location.gps");
-			var wps = Platform.GetFeatureInfo<bool>("location.wps");
+			Locator? service = null;
+			var gps = PlatformUtils.GetFeatureInfo<bool>("location.gps");
+			var wps = PlatformUtils.GetFeatureInfo<bool>("location.wps");
 			if (gps)
 			{
 				if (wps)
@@ -63,5 +70,11 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 			return lastKnownLocation;
 		}
+
+		public Task<bool> StartListeningForegroundAsync(GeolocationListeningRequest request) =>
+			throw ExceptionUtils.NotSupportedOrImplementedException;
+
+		public void StopListeningForeground() =>
+			throw ExceptionUtils.NotSupportedOrImplementedException;
 	}
 }

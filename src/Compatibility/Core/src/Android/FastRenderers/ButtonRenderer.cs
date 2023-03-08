@@ -14,6 +14,7 @@ using AView = Android.Views.View;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.Android.FastRenderers
 {
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class ButtonRenderer : AppCompatButton,
 		IBorderVisualElementRenderer, IButtonLayoutRenderer, IVisualElementRenderer, IViewRenderer, ITabStop,
 		AView.IOnAttachStateChangeListener, AView.IOnFocusChangeListener, AView.IOnClickListener, AView.IOnTouchListener
@@ -251,7 +252,10 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android.FastRenderers
 			{
 				UpdateTextColor();
 			}
-			else if (e.PropertyName == FontElement.FontProperty.PropertyName)
+			else if (e.PropertyName == FontElement.FontAttributesProperty.PropertyName
+					 || e.PropertyName == FontElement.FontAutoScalingEnabledProperty.PropertyName
+					 || e.PropertyName == FontElement.FontFamilyProperty.PropertyName
+					 || e.PropertyName == FontElement.FontSizeProperty.PropertyName)
 			{
 				UpdateFont();
 			}

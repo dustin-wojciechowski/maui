@@ -43,7 +43,7 @@ parameters:
 
 resources:
   repositories:
-    - repository: xamarin-templates
+    - repository: yaml-templates
       type: github
       name: xamarin/yaml-templates
       endpoint: xamarin
@@ -57,7 +57,7 @@ resources:
 stages:
 
   - stage: pack_net6
-    displayName: Pack .NET 6
+    displayName: Pack .NET MAUI
     dependsOn: []
     jobs:
       - ${{ each PackPlatform in parameters.PackPlatforms }}:
@@ -65,13 +65,13 @@ stages:
           workspace:
             clean: all
           displayName: ${{ PackPlatform.name }}
-          timeoutInMinutes: 120
+          timeoutInMinutes: 240
           pool:
             name: ${{ PackPlatform.poolName }}
             vmImage: ${{ PackPlatform.vmImage }}
             ${{ if startsWith(PackPlatform.poolName, 'VSEng-VSMac-Xamarin-Shared') }}:
               demands:
-                - macOS.Name -equals BigSur
+                - macOS.Name -equals Monterey
                 - macOS.Architecture -equals x64
                 - Agent.HasDevices -equals False
                 - Agent.IsPaired -equals False
@@ -89,7 +89,3 @@ stages:
       parameters:
         poolName: $(windowsNet6VmPool)
         vmImage: $(windowsNet6VmImage)
-
-
-
-

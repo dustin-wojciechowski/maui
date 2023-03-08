@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Android.Content;
@@ -8,15 +9,18 @@ using Android.Text.Method;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using AndroidX.AppCompat.Widget;
 using Microsoft.Maui.Controls.Platform;
 using Color = Microsoft.Maui.Graphics.Color;
+using SearchView = AndroidX.AppCompat.Widget.SearchView;
 using Size = Microsoft.Maui.Graphics.Size;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 {
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class SearchBarRenderer : ViewRenderer<SearchBar, SearchView>, SearchView.IOnQueryTextListener
 	{
-		EditText _editText;
+		AppCompatAutoCompleteTextView _editText;
 		InputTypes _inputType;
 		TextColorSwitcher _textColorSwitcher;
 		TextColorSwitcher _hintColorSwitcher;
@@ -46,7 +50,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 		public override SizeRequest GetDesiredSize(int widthConstraint, int heightConstraint)
 		{
 			var sizerequest = base.GetDesiredSize(widthConstraint, heightConstraint);
-			if (Forms.IsNougatOrNewer && heightConstraint == 0 && sizerequest.Request.Height == 0)
+			if (OperatingSystem.IsAndroidVersionAtLeast(24) && heightConstraint == 0 && sizerequest.Request.Height == 0)
 			{
 				sizerequest.Request = new Size(sizerequest.Request.Width, _defaultHeight);
 			}
@@ -89,7 +93,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 				searchView.SetIconifiedByDefault(false);
 				searchView.Iconified = false;
 				SetNativeControl(searchView);
-				_editText = _editText ?? Control.GetChildrenOfType<EditText>().FirstOrDefault();
+				_editText = _editText ?? Control.GetChildrenOfType<AppCompatAutoCompleteTextView>().FirstOrDefault();
 
 				if (_editText != null)
 				{
@@ -173,7 +177,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 		[PortHandler]
 		void UpdateHorizontalTextAlignment()
 		{
-			_editText = _editText ?? Control.GetChildrenOfType<EditText>().FirstOrDefault();
+			_editText = _editText ?? Control.GetChildrenOfType<AppCompatAutoCompleteTextView>().FirstOrDefault();
 
 			if (_editText == null)
 				return;
@@ -184,7 +188,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 		[PortHandler]
 		void UpdateVerticalTextAlignment()
 		{
-			_editText = _editText ?? Control.GetChildrenOfType<EditText>().FirstOrDefault();
+			_editText = _editText ?? Control.GetChildrenOfType<AppCompatAutoCompleteTextView>().FirstOrDefault();
 
 			if (_editText == null)
 				return;
@@ -208,7 +212,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			}
 		}
 
-		[PortHandler ("Partially ported")]
+		[PortHandler("Partially ported")]
 		void UpdateEnabled()
 		{
 			SearchBar model = Element;
@@ -217,10 +221,10 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			{
 				ClearFocus(control);
 				// removes cursor in SearchView
-				control.SetInputType(InputTypes.Null);
+				control.InputType = (int)InputTypes.Null;
 			}
 			else
-				control.SetInputType(_inputType);
+				control.InputType = (int)_inputType;
 
 			if (_editText != null)
 			{
@@ -236,7 +240,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 		[PortHandler]
 		void UpdateFont()
 		{
-			_editText = _editText ?? Control.GetChildrenOfType<EditText>().FirstOrDefault();
+			_editText = _editText ?? Control.GetChildrenOfType<AppCompatAutoCompleteTextView>().FirstOrDefault();
 
 			if (_editText == null)
 				return;
@@ -248,7 +252,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 		[PortHandler]
 		void UpdatePlaceholder()
 		{
-			Control.SetQueryHint(Element.Placeholder);
+			Control.QueryHint = Element.Placeholder;
 		}
 
 		[PortHandler]
@@ -269,7 +273,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 		[PortHandler]
 		void UpdateCharacterSpacing()
 		{
-			_editText = _editText ?? Control.GetChildrenOfType<EditText>().FirstOrDefault();
+			_editText = _editText ?? Control.GetChildrenOfType<AppCompatAutoCompleteTextView>().FirstOrDefault();
 
 			if (_editText != null)
 			{
@@ -284,7 +288,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 
 		void UpdateMaxLength()
 		{
-			_editText = _editText ?? Control.GetChildrenOfType<EditText>().FirstOrDefault();
+			_editText = _editText ?? Control.GetChildrenOfType<AppCompatAutoCompleteTextView>().FirstOrDefault();
 
 			var currentFilters = new List<IInputFilter>(_editText?.GetFilters() ?? new IInputFilter[0]);
 
@@ -324,11 +328,12 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 					}
 				}
 			}
-			Control.SetInputType(_inputType);
+
+			Control.InputType = (int)_inputType;
 
 			if (keyboard == Keyboard.Numeric)
 			{
-				_editText = _editText ?? Control.GetChildrenOfType<EditText>().FirstOrDefault();
+				_editText = _editText ?? Control.GetChildrenOfType<AppCompatAutoCompleteTextView>().FirstOrDefault();
 				if (_editText != null)
 					_editText.KeyListener = GetDigitsKeyListener(_inputType);
 			}

@@ -26,7 +26,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 		DisableSetStatusBarColor = 1 << 0,
 	}
 
+#pragma warning disable CA1815 // Override equals and operator equals on value types
 	public struct ActivationOptions
+#pragma warning restore CA1815 // Override equals and operator equals on value types
 	{
 		public ActivationOptions(Bundle bundle)
 		{
@@ -37,7 +39,8 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 		public ActivationFlags Flags;
 	}
 
-	public class FormsAppCompatActivity : AppCompatActivity, IDeviceInfoProvider
+	[System.Obsolete]
+	class FormsAppCompatActivity : AppCompatActivity, IDeviceInfoProvider
 	{
 		public delegate bool BackButtonPressedEventHandler(object sender, EventArgs e);
 
@@ -68,11 +71,16 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 
 		public event EventHandler ConfigurationChanged;
 
+		[Obsolete]
+#pragma warning disable 809
 		public override void OnBackPressed()
+#pragma warning restore 809
 		{
 			if (BackPressed != null && BackPressed(this, EventArgs.Empty))
 				return;
+#pragma warning disable CA1416, CA1422 // Validate platform compatibility
 			base.OnBackPressed();
+#pragma warning restore CA1416, CA1422 // Validate platform compatibility
 		}
 
 		public override void OnConfigurationChanged(Configuration newConfig)
@@ -80,7 +88,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			base.OnConfigurationChanged(newConfig);
 			ConfigurationChanged?.Invoke(this, new EventArgs());
 
-			Microsoft.Maui.Controls.Application.Current?.ThemeChanged();
+			((IApplication)Microsoft.Maui.Controls.Application.Current)?.ThemeChanged();
 		}
 
 		public override bool OnOptionsItemSelected(IMenuItem item)
@@ -466,6 +474,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			Platform.SettingNewPage();
 		}
 
+		[PortHandler]
 		void SetSoftInputMode()
 		{
 			var adjust = SoftInput.AdjustPan;

@@ -1,18 +1,22 @@
-﻿using Android.Content.Res;
+﻿using System;
 using Android.Views;
 using Android.Views.InputMethods;
 using AndroidX.AppCompat.Widget;
+using Microsoft.Maui.Graphics;
 using static Android.Views.View;
 
 namespace Microsoft.Maui.Handlers
 {
+	// TODO: NET8 issoto - Change the TPlatformView generic type to MauiAppCompatEditText
+	// This type adds support to the SelectionChanged event
 	public partial class EditorHandler : ViewHandler<IEditor, AppCompatEditText>
 	{
-		ColorStateList? _defaultPlaceholderColors;
+		bool _set;
 
+		// TODO: NET8 issoto - Change the return type to MauiAppCompatEditText
 		protected override AppCompatEditText CreatePlatformView()
 		{
-			var editText = new MauiEditText(Context)
+			var editText = new MauiAppCompatEditText(Context)
 			{
 				ImeOptions = ImeAction.Done,
 				Gravity = GravityFlags.Top,
@@ -22,21 +26,38 @@ namespace Microsoft.Maui.Handlers
 			editText.SetSingleLine(false);
 			editText.SetHorizontallyScrolling(false);
 
-			_defaultPlaceholderColors = editText.HintTextColors;
-
 			return editText;
 		}
 
-		protected override void ConnectHandler(AppCompatEditText platformView)
+		public override void SetVirtualView(IView view)
 		{
-			platformView.TextChanged += OnTextChanged;
-			platformView.FocusChange += OnFocusedChange;
+			base.SetVirtualView(view);
+
+			// TODO: NET8 issoto - Remove the casting once we can set the TPlatformView generic type as MauiAppCompatEditText
+			if (!_set && PlatformView is MauiAppCompatEditText editText)
+				editText.SelectionChanged += OnSelectionChanged;
+
+			_set = true;
 		}
 
+		// TODO: NET8 issoto - Change the platformView type to MauiAppCompatEditText
+		protected override void ConnectHandler(AppCompatEditText platformView)
+		{
+			platformView.ViewAttachedToWindow += OnPlatformViewAttachedToWindow;
+			platformView.TextChanged += OnTextChanged;
+		}
+
+		// TODO: NET8 issoto - Change the platformView type to MauiAppCompatEditText
 		protected override void DisconnectHandler(AppCompatEditText platformView)
 		{
+			platformView.ViewAttachedToWindow -= OnPlatformViewAttachedToWindow;
 			platformView.TextChanged -= OnTextChanged;
-			platformView.FocusChange -= OnFocusedChange;
+
+			// TODO: NET8 issoto - Remove the casting once we can set the TPlatformView generic type as MauiAppCompatEditText
+			if (_set && platformView is MauiAppCompatEditText editText)
+				editText.SelectionChanged -= OnSelectionChanged;
+
+			_set = false;
 		}
 
 		public static void MapBackground(IEditorHandler handler, IEditor editor) =>
@@ -54,7 +75,7 @@ namespace Microsoft.Maui.Handlers
 		public static void MapPlaceholderColor(IEditorHandler handler, IEditor editor)
 		{
 			if (handler is EditorHandler platformHandler)
-				handler.PlatformView?.UpdatePlaceholderColor(editor, platformHandler._defaultPlaceholderColors);
+				handler.PlatformView?.UpdatePlaceholderColor(editor);
 		}
 
 		public static void MapCharacterSpacing(IEditorHandler handler, IEditor editor) =>
@@ -87,13 +108,42 @@ namespace Microsoft.Maui.Handlers
 		public static void MapSelectionLength(IEditorHandler handler, ITextInput editor) =>
 			handler.PlatformView?.UpdateSelectionLength(editor);
 
-		void OnTextChanged(object? sender, Android.Text.TextChangedEventArgs e) =>
+		void OnPlatformViewAttachedToWindow(object? sender, ViewAttachedToWindowEventArgs e)
+		{
+			if (PlatformView.IsAlive() && PlatformView.Enabled)
+			{
+				// https://issuetracker.google.com/issues/37095917
+				PlatformView.Enabled = false;
+				PlatformView.Enabled = true;
+			}
+		}
+
+		void OnTextChanged(object? sender, Android.Text.TextChangedEventArgs e)
+		{
+			// Let the mapping know that the update is coming from changes to the platform control
+			DataFlowDirection = DataFlowDirection.FromPlatform;
 			VirtualView?.UpdateText(e);
 
-		void OnFocusedChange(object? sender, FocusChangeEventArgs e)
+			// Reset to the default direction
+			DataFlowDirection = DataFlowDirection.ToPlatform;
+		}
+
+		private void OnSelectionChanged(object? sender, EventArgs e)
 		{
-			if (!e.HasFocus)
-				VirtualView?.Completed();
+			var cursorPosition = PlatformView.GetCursorPosition();
+			var selectedTextLength = PlatformView.GetSelectedTextLength();
+
+			if (VirtualView.CursorPosition != cursorPosition)
+				VirtualView.CursorPosition = cursorPosition;
+
+			if (VirtualView.SelectionLength != selectedTextLength)
+				VirtualView.SelectionLength = selectedTextLength;
+		}
+
+		public override void PlatformArrange(Rect frame)
+		{
+			this.PrepareForTextViewArrange(frame);
+			base.PlatformArrange(frame);
 		}
 	}
 }

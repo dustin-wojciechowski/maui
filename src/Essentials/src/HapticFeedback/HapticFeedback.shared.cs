@@ -1,40 +1,45 @@
-using System;
-using System.ComponentModel;
-using Microsoft.Maui.Essentials;
-using Microsoft.Maui.Essentials.Implementations;
+﻿#nullable enable
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.Devices
 {
+	/// <summary>
+	/// The HapticFeedback API lets you control haptic feedback on the device.
+	/// </summary>
 	public interface IHapticFeedback
 	{
+		/// <summary>
+		/// Gets a value indicating whether haptic feedback is supported on this device.
+		/// </summary>
 		bool IsSupported { get; }
-		
+
+		/// <summary>
+		/// Perform a type of haptic feedback on the device.
+		/// </summary>
+		/// <param name="type">The haptic feedback type to perform.</param>
 		void Perform(HapticFeedbackType type);
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/HapticFeedback.xml" path="Type[@FullName='Microsoft.Maui.Essentials.HapticFeedback']/Docs" />
-	public static partial class HapticFeedback
+	/// <summary>
+	/// The HapticFeedback API lets you control haptic feedback on the device.
+	/// </summary>
+	public static class HapticFeedback
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/HapticFeedback.xml" path="//Member[@MemberName='Perform']/Docs" />
-		public static void Perform(HapticFeedbackType type = HapticFeedbackType.Click)
-		{
-			if (!Current.IsSupported)
-				throw new FeatureNotSupportedException();
-			Current.Perform(type);
-		}
+		/// <summary>
+		/// Perform a type of haptic feedback on the device.
+		/// </summary>
+		/// <param name="type">The haptic feedback type to perform.</param>
+		public static void Perform(HapticFeedbackType type = HapticFeedbackType.Click) =>
+			Default.Perform(type);
 
-#nullable enable
-		static IHapticFeedback? currentImplementation;
-#nullable disable
+		static IHapticFeedback? defaultImplementation;
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static IHapticFeedback Current =>
-			currentImplementation ??= new HapticFeedbackImplementation();
+		/// <summary>
+		/// Provides the default implementation for static usage of this API.
+		/// </summary>
+		public static IHapticFeedback Default =>
+			defaultImplementation ??= new HapticFeedbackImplementation();
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-#nullable enable
-		public static void SetCurrent(IHapticFeedback? implementation) =>
-			currentImplementation = implementation;
-#nullable disable
+		internal static void SetDefault(IHapticFeedback? implementation) =>
+			defaultImplementation = implementation;
 	}
 }

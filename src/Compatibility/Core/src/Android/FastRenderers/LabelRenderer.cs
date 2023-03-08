@@ -14,6 +14,7 @@ using Size = Microsoft.Maui.Graphics.Size;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.Android.FastRenderers
 {
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class LabelRenderer : FormsTextView, IVisualElementRenderer, IViewRenderer, ITabStop
 	{
 		int? _defaultLabelFor;
@@ -139,6 +140,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android.FastRenderers
 			return result;
 		}
 
+		[PortHandler]
 		protected override void OnLayout(bool changed, int left, int top, int right, int bottom)
 		{
 			base.OnLayout(changed, left, top, right, bottom);
@@ -400,7 +402,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android.FastRenderers
 				switch (Element.TextType)
 				{
 					case TextType.Html:
-						if (Forms.IsNougatOrNewer)
+						if (OperatingSystem.IsAndroidVersionAtLeast(24))
 							Control.SetText(Html.FromHtml(Element.Text ?? string.Empty, FromHtmlOptions.ModeCompact), BufferType.Spannable);
 						else
 #pragma warning disable CS0618 // Type or member is obsolete

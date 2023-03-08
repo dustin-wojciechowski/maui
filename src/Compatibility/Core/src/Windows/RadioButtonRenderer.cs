@@ -1,14 +1,15 @@
 using System.ComponentModel;
+using Microsoft.Maui.Controls.Platform;
+using Microsoft.Maui.Graphics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
+using static Microsoft.Maui.Controls.Compatibility.Platform.UWP.ViewToRendererConverter;
 using WBrush = Microsoft.UI.Xaml.Media.Brush;
 using WThickness = Microsoft.UI.Xaml.Thickness;
-using static Microsoft.Maui.Controls.Compatibility.Platform.UWP.ViewToRendererConverter;
-using Microsoft.Maui.Graphics;
-using Microsoft.Maui.Controls.Platform;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 {
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class RadioButtonRenderer : ViewRenderer<RadioButton, FormsRadioButton>
 	{
 		bool _fontApplied;
@@ -169,6 +170,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 			Control.BorderThickness = Element.BorderWidth == (double)RadioButton.BorderWidthProperty.DefaultValue ? WinUIHelpers.CreateThickness(3) : WinUIHelpers.CreateThickness(Element.BorderWidth);
 		}
 
+		[PortHandler]
 		void UpdateContent()
 		{
 			var content = Element?.Content;
@@ -192,7 +194,11 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 			if (font == Font.Default && !_fontApplied)
 				return;
 
-			Font fontToApply = font == Font.Default ? Font.SystemFontOfSize(Device.GetNamedSize(NamedSize.Medium, Element.GetType(), false)) : font;
+			Font fontToApply = font == Font.Default
+#pragma warning disable CS0612 // Type or member is obsolete
+				? Font.SystemFontOfSize(Device.GetNamedSize(NamedSize.Medium, Element.GetType(), false))
+#pragma warning restore CS0612 // Type or member is obsolete
+				: font;
 
 			Control.ApplyFont(fontToApply, Element.RequireFontManager());
 			_fontApplied = true;

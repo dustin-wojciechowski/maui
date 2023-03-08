@@ -1,9 +1,10 @@
-﻿using Microsoft.Maui.Controls.Shapes;
+﻿#nullable disable
+using Microsoft.Maui.Controls.Shapes;
 
 namespace Microsoft.Maui.Controls.Handlers
 {
 	public partial class RoundRectangleHandler
 	{
-		public static void MapCornerRadius(IViewHandler handler, RoundRectangle roundRectangle) { }
+		public static void MapCornerRadius(IShapeViewHandler handler, RoundRectangle roundRectangle) { }
 	}
 }

@@ -11,7 +11,11 @@ using System;
 using PlatformImage = Microsoft.UI.Xaml.Media.ImageSource;
 using PlatformImageView = Microsoft.UI.Xaml.Controls.Image;
 using PlatformView = Microsoft.UI.Xaml.Controls.Button;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformImage = Microsoft.Maui.Platform.MauiImageSource;
+using PlatformImageView = Tizen.UIExtensions.NUI.Image;
+using PlatformView = Microsoft.Maui.Platform.MauiImageButton;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformImage = System.Object;
 using PlatformImageView = System.Object;
 using PlatformView = System.Object;
@@ -28,7 +32,8 @@ namespace Microsoft.Maui.Handlers
 			[nameof(IButtonStroke.StrokeThickness)] = MapStrokeThickness,
 			[nameof(IButtonStroke.StrokeColor)] = MapStrokeColor,
 			[nameof(IButtonStroke.CornerRadius)] = MapCornerRadius,
-#if WINDOWS
+			[nameof(IImageButton.Padding)] = MapPadding,
+#if ANDROID || WINDOWS
 			[nameof(IImageButton.Background)] = MapBackground,
 #endif
 		};
@@ -45,7 +50,13 @@ namespace Microsoft.Maui.Handlers
 		{
 		}
 
-		public ImageButtonHandler(IPropertyMapper mapper) : base(mapper ?? Mapper)
+		public ImageButtonHandler(IPropertyMapper? mapper)
+			: base(mapper ?? Mapper, CommandMapper)
+		{
+		}
+
+		public ImageButtonHandler(IPropertyMapper? mapper, CommandMapper? commandMapper)
+			: base(mapper ?? Mapper, commandMapper ?? CommandMapper)
 		{
 		}
 

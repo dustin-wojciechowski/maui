@@ -1,23 +1,22 @@
-﻿<Project Sdk="Microsoft.Net.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;netstandard2.0;$(_MauiDotNetTfm);$(MauiPlatforms)</TargetFrameworks>
     <AssemblyName>Microsoft.Maui.Essentials</AssemblyName>
     <RootNamespace>Microsoft.Maui.Essentials</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <WarningsNotAsErrors>BI1234</WarningsNotAsErrors>
-    <IsPackable>false</IsPackable>
-	<WarningsNotAsErrors>CS1571;CS1572;CS1734</WarningsNotAsErrors>
+    <IsPackable>true</IsPackable>
+    <IsTrimmable>true</IsTrimmable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);NU5104;RS0041;RS0026</NoWarn>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+    <NoWarn Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">$(NoWarn);CA1420</NoWarn>
   </PropertyGroup>
-  <Import Project="..\..\..\.nuspec\Microsoft.Maui.Controls.MultiTargeting.targets" />
-  <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'android' ">
-    <!-- remove other AndroidX packages from the MultiTargeting -->
-    <PackageReference Remove="*" />
+  <Import Project="$(MauiSrcDirectory)MultiTargeting.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\Graphics\src\Graphics\Graphics.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Maui.Graphics" />
-    <None Include="..\..\..\LICENSE" PackagePath="" Pack="true" />
-    <None Include="..\..\..\Assets\xamarin.essentials_128x128.png" PackagePath="icon.png" Pack="true" />
-    <None Include="nugetreadme.txt" PackagePath="readme.txt" Pack="true" />
     <Compile Include="**\*.shared.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
     <Compile Include="**\*.shared.*.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
   </ItemGroup>
@@ -31,6 +30,7 @@
   <ItemGroup Condition=" $(TargetFramework.Contains('-windows')) ">
     <Compile Include="**\*.uwp.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
     <Compile Include="**\*.uwp.*.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'android' ">
     <Compile Include="**\*.android.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
@@ -56,13 +56,14 @@
     <Compile Include="**\*.watchos.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
     <Compile Include="**\*.watchos.*.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
   </ItemGroup> -->
-  <!-- <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'tizen' ">
-    <PackageReference Include="Tizen.NET" Version="4.0.0" PrivateAssets="All" />
+  <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'tizen' ">
     <Compile Include="**\*.tizen.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
     <Compile Include="**\*.tizen.*.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
-  </ItemGroup> -->
+  </ItemGroup>
   <!-- <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'macos' ">
     <Compile Include="**\*.macos.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
     <Compile Include="**\*.macos.*.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
   </ItemGroup> -->
+  <Import Project="$(MauiSrcDirectory)PublicAPI.targets" />
+  <Import Project="$(MauiSrcDirectory)Workload\Shared\LibraryPacks.targets" />
 </Project>

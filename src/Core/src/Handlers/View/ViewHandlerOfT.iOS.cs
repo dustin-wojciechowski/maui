@@ -13,7 +13,7 @@ namespace Microsoft.Maui.Handlers
 
 		public UIViewController? ViewController { get; set; }
 
-		public override void PlatformArrange(Rectangle rect) =>
+		public override void PlatformArrange(Rect rect) =>
 			this.PlatformArrangeHandler(rect);
 
 		public override Size GetDesiredSize(double widthConstraint, double heightConstraint) =>
@@ -41,19 +41,31 @@ namespace Microsoft.Maui.Handlers
 		protected override void RemoveContainer()
 		{
 			if (PlatformView == null || ContainerView == null || PlatformView.Superview != ContainerView)
+			{
+				CleanupContainerView(ContainerView);
+				ContainerView = null;
 				return;
+			}
 
 			var oldParent = (UIView?)ContainerView.Superview;
 
 			var oldIndex = oldParent?.IndexOfSubview(ContainerView);
-			ContainerView.RemoveFromSuperview();
-
+			CleanupContainerView(ContainerView);
 			ContainerView = null;
 
 			if (oldIndex is int idx && idx >= 0)
 				oldParent?.InsertSubview(PlatformView, idx);
 			else
 				oldParent?.AddSubview(PlatformView);
+
+			void CleanupContainerView(UIView? containerView)
+			{
+				if (containerView is WrapperView wrapperView)
+				{
+					wrapperView.RemoveFromSuperview();
+					wrapperView.Dispose();
+				}
+			}
 		}
 	}
 }

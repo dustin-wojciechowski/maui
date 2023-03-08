@@ -12,6 +12,7 @@ using AView = Android.Views.View;
 
 namespace Microsoft.Maui.DeviceTests
 {
+	[Collection(ControlsHandlerTestBase.RunInNewWindowCollection)]
 	public partial class FlyoutPageTests
 	{
 		DrawerLayout FindPlatformFlyoutView(AView aView) =>

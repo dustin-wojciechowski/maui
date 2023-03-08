@@ -1,155 +1,132 @@
+#nullable disable
 using System;
 using System.ComponentModel;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls.Internals;
+using Microsoft.Maui.Devices;
 using Microsoft.Maui.Dispatching;
-using Microsoft.Maui.Essentials;
 
 namespace Microsoft.Maui.Controls
 {
-	/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="Type[@FullName='Microsoft.Maui.Controls.Device']/Docs" />
+	/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="Type[@FullName='Microsoft.Maui.Controls.Device']/Docs/*" />
+	[Obsolete]
 	public static class Device
 	{
 		// this is just for those cases where the runtime needs to pre-load renderers
+		[Obsolete]
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		public static Assembly DefaultRendererAssembly { get; set; }
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='iOS']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='iOS']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.iOS instead.")]
 		public const string iOS = "iOS";
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='Android']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='Android']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.Android instead.")]
 		public const string Android = "Android";
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='UWP']/Docs" />
-		public const string UWP = "UWP";
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='macOS']/Docs" />
-		public const string macOS = "macOS";
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GTK']/Docs" />
-		public const string GTK = "GTK";
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='Tizen']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='UWP']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.WinUI instead.")]
+		public const string UWP = "WinUI";
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='macOS']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.macOS instead.")]
+		internal const string macOS = "macOS";
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GTK']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.GTK instead.")]
+		internal const string GTK = "GTK";
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='Tizen']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.Tizen instead.")]
 		public const string Tizen = "Tizen";
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='WPF']/Docs" />
-		public const string WPF = "WPF";
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.WinUI instead.")]
+		public const string WinUI = "WinUI";
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='WPF']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.WPF instead.")]
+		internal const string WPF = "WPF";
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.MacCatalyst instead.")]
 		public const string MacCatalyst = "MacCatalyst";
+		[Obsolete("Use Microsoft.Maui.Devices.DevicePlatform.tvOS instead.")]
 		public const string tvOS = "tvOS";
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='Idiom']/Docs" />
-		public static TargetIdiom Idiom
-		{
-			get
-			{
-				var idiom = DeviceInfo.Idiom;
-				if (idiom == DeviceIdiom.Tablet)
-					return TargetIdiom.Tablet;
-				if (idiom == DeviceIdiom.Phone)
-					return TargetIdiom.Phone;
-				if (idiom == DeviceIdiom.Desktop)
-					return TargetIdiom.Desktop;
-				if (idiom == DeviceIdiom.TV)
-					return TargetIdiom.TV;
-				if (idiom == DeviceIdiom.Watch)
-					return TargetIdiom.Watch;
-				return TargetIdiom.Unsupported;
-			}
-		}
-
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='RuntimePlatform']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='RuntimePlatform']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.Devices.DeviceInfo.Platform instead.")]
 		public static string RuntimePlatform => DeviceInfo.Platform.ToString();
 
-		// [Obsolete]
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='FlowDirection']/Docs" />
-		public static FlowDirection FlowDirection
-		{
-			get
-			{
-				return AppInfo.RequestedLayoutDirection == LayoutDirection.RightToLeft
-					? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-			}
-		}
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='FlowDirection']/Docs/*" />
+		[Obsolete("Use Microsoft.Maui.ApplicationModel.AppInfo.RequestedLayoutDirection instead.")]
+		public static FlowDirection FlowDirection =>
+			AppInfo.RequestedLayoutDirection == LayoutDirection.RightToLeft
+				? FlowDirection.RightToLeft
+				: FlowDirection.LeftToRight;
 
-		//[Obsolete("Use BindableObject.Dispatcher instead.")]
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='IsInvokeRequired']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='IsInvokeRequired']/Docs/*" />
+		[Obsolete("Use BindableObject.Dispatcher.IsDispatchRequired instead.")]
 		public static bool IsInvokeRequired =>
 			Application.Current.FindDispatcher().IsDispatchRequired;
 
-		//[Obsolete("Use BindableObject.Dispatcher instead.")]
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='BeginInvokeOnMainThread']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='BeginInvokeOnMainThread']/Docs/*" />
+		[Obsolete("Use BindableObject.Dispatcher.Dispatch() instead.")]
 		public static void BeginInvokeOnMainThread(Action action) =>
 			Application.Current.FindDispatcher().Dispatch(action);
 
-		//[Obsolete("Use BindableObject.Dispatcher instead.")]
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='InvokeOnMainThreadAsync']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='InvokeOnMainThreadAsync&lt;T&gt;'][2]/Docs/*" />
+		[Obsolete("Use BindableObject.Dispatcher.DispatchAsync() instead.")]
 		public static Task<T> InvokeOnMainThreadAsync<T>(Func<T> func) =>
 			Application.Current.FindDispatcher().DispatchAsync(func);
 
-		//[Obsolete("Use BindableObject.Dispatcher instead.")]
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='InvokeOnMainThreadAsync'][0]/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='InvokeOnMainThreadAsync'][1]/Docs/*" />
+		[Obsolete("Use BindableObject.Dispatcher.DispatchAsync() instead.")]
 		public static Task InvokeOnMainThreadAsync(Action action) =>
 			Application.Current.FindDispatcher().DispatchAsync(action);
 
-		//[Obsolete("Use BindableObject.Dispatcher instead.")]
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='InvokeOnMainThreadAsync']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='InvokeOnMainThreadAsync&lt;T&gt;'][1]/Docs/*" />
+		[Obsolete("Use BindableObject.Dispatcher.DispatchAsync() instead.")]
 		public static Task<T> InvokeOnMainThreadAsync<T>(Func<Task<T>> funcTask) =>
 			Application.Current.FindDispatcher().DispatchAsync(funcTask);
 
-		//[Obsolete("Use BindableObject.Dispatcher instead.")]
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='InvokeOnMainThreadAsync']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='InvokeOnMainThreadAsync'][2]/Docs/*" />
+		[Obsolete("Use BindableObject.Dispatcher.DispatchAsync() instead.")]
 		public static Task InvokeOnMainThreadAsync(Func<Task> funcTask) =>
 			Application.Current.FindDispatcher().DispatchAsync(funcTask);
 
-		//[Obsolete("Use BindableObject.Dispatcher instead.")]
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GetMainThreadSynchronizationContextAsync']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GetMainThreadSynchronizationContextAsync']/Docs/*" />
+		[Obsolete("Use BindableObject.Dispatcher.GetSynchronizationContextAsync() instead.")]
 		public static Task<SynchronizationContext> GetMainThreadSynchronizationContextAsync() =>
 			Application.Current.FindDispatcher().GetSynchronizationContextAsync();
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GetNamedSize'][1]/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GetNamedSize'][2]/Docs/*" />
+		[Obsolete]
 		public static double GetNamedSize(NamedSize size, Element targetElement)
 		{
 			return GetNamedSize(size, targetElement.GetType());
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GetNamedSize'][0]/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GetNamedSize'][1]/Docs/*" />
+		[Obsolete]
 		public static double GetNamedSize(NamedSize size, Type targetElementType)
 		{
 			return GetNamedSize(size, targetElementType, false);
 		}
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='StartTimer']/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='StartTimer']/Docs/*" />
+		[Obsolete("Use BindableObject.Dispatcher.StartTimer() or BindableObject.Dispatcher.DispatchDelayed() instead.")]
 		public static void StartTimer(TimeSpan interval, Func<bool> callback)
 		{
 			_ = callback ?? throw new ArgumentNullException(nameof(callback));
 
 			var dispatcher = Application.Current.FindDispatcher();
 
-			StartTimer(dispatcher, interval, callback);
+			dispatcher.StartTimer(interval, callback);
 		}
 
-		internal static void StartTimer(IDispatcher dispatcher, TimeSpan interval, Func<bool> callback)
-		{
-			_ = callback ?? throw new ArgumentNullException(nameof(callback));
-
-			var timer = dispatcher.CreateTimer();
-			timer.Interval = interval;
-			timer.IsRepeating = true;
-			timer.Tick += OnTick;
-			timer.Start();
-
-			void OnTick(object sender, EventArgs e)
-			{
-				if (!callback())
-				{
-					timer.Tick -= OnTick;
-					timer.Stop();
-				}
-			}
-		}
-
-		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GetNamedSize'][2]/Docs" />
+		/// <include file="../../docs/Microsoft.Maui.Controls/Device.xml" path="//Member[@MemberName='GetNamedSize'][3]/Docs/*" />
+		[Obsolete]
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		public static double GetNamedSize(NamedSize size, Type targetElementType, bool useOldSizes) =>
 			DependencyService.Get<IFontNamedSizeService>()?.GetNamedSize(size, targetElementType, useOldSizes) ??
 			throw new NotImplementedException("The current platform does not implement the IFontNamedSizeService dependency service.");
 
+		[Obsolete]
 		public static class Styles
 		{
 			public static readonly string TitleStyleKey = "TitleStyle";

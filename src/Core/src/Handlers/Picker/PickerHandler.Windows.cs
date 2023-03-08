@@ -1,60 +1,68 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
-using WBrush = Microsoft.UI.Xaml.Media.Brush;
+using Microsoft.UI.Xaml.Controls;
 using WSelectionChangedEventArgs = Microsoft.UI.Xaml.Controls.SelectionChangedEventArgs;
 
 namespace Microsoft.Maui.Handlers
 {
-	public partial class PickerHandler : ViewHandler<IPicker, MauiComboBox>
+	public partial class PickerHandler : ViewHandler<IPicker, ComboBox>
 	{
-		WBrush? _defaultForeground;
-
-		protected override MauiComboBox CreatePlatformView()
+		protected override ComboBox CreatePlatformView()
 		{
-			var platformPicker = new MauiComboBox();
-
-			if (VirtualView != null)
-				platformPicker.ItemsSource = new ItemDelegateList<string>(VirtualView);
-
+			var platformPicker = new ComboBox();
 			return platformPicker;
 		}
 
-		protected override void ConnectHandler(MauiComboBox platformView)
+		protected override void ConnectHandler(ComboBox platformView)
 		{
 			platformView.SelectionChanged += OnControlSelectionChanged;
-
-			if (VirtualView.Items is INotifyCollectionChanged notifyCollection)
-				notifyCollection.CollectionChanged += OnRowsCollectionChanged;
-
-			SetupDefaults(platformView);
+			platformView.DropDownOpened += OnMauiComboBoxDropDownOpened;
 		}
 
-		protected override void DisconnectHandler(MauiComboBox platformView)
+		protected override void DisconnectHandler(ComboBox platformView)
 		{
 			platformView.SelectionChanged -= OnControlSelectionChanged;
-
-			if (VirtualView.Items is INotifyCollectionChanged notifyCollection)
-				notifyCollection.CollectionChanged -= OnRowsCollectionChanged;
+			platformView.DropDownOpened -= OnMauiComboBoxDropDownOpened;
 		}
 
-		void SetupDefaults(MauiComboBox platformView)
+		// Updating ItemSource Resets the SelectedIndex.
+		// Which propagates that change to the virtualview
+		// We don't want the virtual views selected index to change
+		// when updating the itmmsource.
+		// The ItemSource should probably be reworked to just be an OC that's
+		// kept in sync
+		internal bool UpdatingItemSource { get; set; }
+
+		internal void SetUpdatingItemSource(bool updatingItemSource)
 		{
-			_defaultForeground = platformView.Foreground;
+			UpdatingItemSource = updatingItemSource;
+
+			if (!updatingItemSource)
+				UpdateValue(nameof(IPicker.SelectedIndex));
 		}
 
 		static void Reload(IPickerHandler handler)
 		{
-			if (handler.VirtualView == null || handler.PlatformView == null)
-				return;
+			if (handler is PickerHandler ph1)
+				ph1.SetUpdatingItemSource(true);
+
 			handler.PlatformView.ItemsSource = new ItemDelegateList<string>(handler.VirtualView);
+
+			if (handler is PickerHandler ph2)
+				ph2.SetUpdatingItemSource(false);
 		}
 
+		// TODO: Uncomment me on NET8 [Obsolete]
 		public static void MapReload(IPickerHandler handler, IPicker picker, object? args) => Reload(handler);
 
-		public static void MapTitle(IPickerHandler handler, IPicker picker) 
+		internal static void MapItems(IPickerHandler handler, IPicker picker) => Reload(handler);
+
+		public static void MapTitle(IPickerHandler handler, IPicker picker)
 		{
 			handler.PlatformView?.UpdateTitle(picker);
+			handler.UpdateValue(nameof(IView.Semantics));
 		}
 
 		public static void MapTitleColor(IPickerHandler handler, IPicker picker)
@@ -62,17 +70,22 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateTitle(picker);
 		}
 
+		public static void MapBackground(IPickerHandler handler, IPicker picker)
+		{
+			handler.PlatformView?.UpdateBackground(picker);
+		}
+
 		public static void MapSelectedIndex(IPickerHandler handler, IPicker picker)
 		{
 			handler.PlatformView?.UpdateSelectedIndex(picker);
 		}
 
-		public static void MapCharacterSpacing(IPickerHandler handler, IPicker picker) 
+		public static void MapCharacterSpacing(IPickerHandler handler, IPicker picker)
 		{
 			handler.PlatformView?.UpdateCharacterSpacing(picker);
 		}
 
-		public static void MapFont(IPickerHandler handler, IPicker picker) 
+		public static void MapFont(IPickerHandler handler, IPicker picker)
 		{
 			var fontManager = handler.GetRequiredService<IFontManager>();
 
@@ -81,17 +94,14 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapTextColor(IPickerHandler handler, IPicker picker)
 		{
-			if (handler is PickerHandler platformHandler)
-			{
-				platformHandler.PlatformView?.UpdateTextColor(picker, platformHandler._defaultForeground);
-			}
+			handler.PlatformView.UpdateTextColor(picker);
 		}
 
 		public static void MapHorizontalTextAlignment(IPickerHandler handler, IPicker picker)
 		{
 			handler.PlatformView?.UpdateHorizontalTextAlignment(picker);
 		}
-		
+
 		public static void MapVerticalTextAlignment(IPickerHandler handler, IPicker picker)
 		{
 			handler.PlatformView?.UpdateVerticalTextAlignment(picker);
@@ -99,13 +109,21 @@ namespace Microsoft.Maui.Handlers
 
 		void OnControlSelectionChanged(object? sender, WSelectionChangedEventArgs e)
 		{
-			if (VirtualView != null && PlatformView != null)
+			if (PlatformView == null)
+				return;
+
+			if (VirtualView != null && !UpdatingItemSource)
 				VirtualView.SelectedIndex = PlatformView.SelectedIndex;
+
+			PlatformView.MinWidth = 0;
 		}
 
-		void OnRowsCollectionChanged(object? sender, EventArgs e)
+		static void OnMauiComboBoxDropDownOpened(object? sender, object e)
 		{
-			Reload(this);
+			ComboBox? comboBox = sender as ComboBox;
+			if (comboBox == null)
+				return;
+			comboBox.MinWidth = comboBox.ActualWidth;
 		}
 	}
 }

@@ -14,6 +14,7 @@ using MixedContentHandling = Android.Webkit.MixedContentHandling;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 {
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class WebViewRenderer : ViewRenderer<WebView, AWebView>, IWebViewDelegate
 	{
 		public const string AssetBaseUrl = "file:///android_asset/";
@@ -98,11 +99,13 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			base.Dispose(disposing);
 		}
 
+		[PortHandler]
 		protected virtual WebViewClient GetWebViewClient()
 		{
 			return new FormsWebViewClient(this);
 		}
 
+		[PortHandler]
 		protected virtual FormsWebChromeClient GetFormsWebChromeClient()
 		{
 			return new FormsWebChromeClient();
@@ -113,6 +116,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			return new Size(Context.ToPixels(40), Context.ToPixels(40));
 		}
 
+		[PortHandler]
 		protected override AWebView CreateNativeControl()
 		{
 			var webView = new AWebView(Context);
@@ -133,7 +137,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			{
 				var webView = CreateNativeControl();
 #pragma warning disable 618 // This can probably be replaced with LinearLayout(LayoutParams.MatchParent, LayoutParams.MatchParent); just need to test that theory
+#pragma warning disable CA1416, CA1422 // Validate platform compatibility
 				webView.LayoutParameters = new global::Android.Widget.AbsoluteLayout.LayoutParams(LayoutParams.MatchParent, LayoutParams.MatchParent, 0, 0);
+#pragma warning restore CA1416, CA1422 // Validate platform compatibility
 #pragma warning restore 618
 
 				_webViewClient = GetWebViewClient();
@@ -289,7 +295,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 
 			SyncNativeCookies(url);
 		}
-		
+
 		[PortHandler]
 		void SyncNativeCookies(string url)
 		{
@@ -389,6 +395,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			ElementController.CanGoForward = Control.CanGoForward();
 		}
 
+		[PortHandler]
 		void UpdateMixedContentMode()
 		{
 			if (Control != null)
@@ -397,6 +404,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			}
 		}
 
+		[PortHandler]
 		void UpdateEnableZoomControls()
 		{
 			var value = Element.OnThisPlatform().ZoomControlsEnabled();
@@ -404,6 +412,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.Android
 			Control.Settings.BuiltInZoomControls = value;
 		}
 
+		[PortHandler]
 		void UpdateDisplayZoomControls()
 		{
 			Control.Settings.DisplayZoomControls = Element.OnThisPlatform().ZoomControlsDisplayed();

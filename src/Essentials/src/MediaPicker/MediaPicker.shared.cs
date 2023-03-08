@@ -1,77 +1,113 @@
-using System;
-using System.ComponentModel;
-using System.IO;
+#nullable enable
 using System.Threading.Tasks;
-using Microsoft.Maui.Essentials;
-using Microsoft.Maui.Essentials.Implementations;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Storage;
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.Media
 {
+	/// <summary>
+	/// The MediaPicker API lets a user pick or take a photo or video on the device.
+	/// </summary>
 	public interface IMediaPicker
 	{
+		/// <summary>
+		/// Gets a value indicating whether capturing media is supported on this device.
+		/// </summary>
 		bool IsCaptureSupported { get; }
 
-		Task<FileResult> PickPhotoAsync(MediaPickerOptions options);
+		/// <summary>
+		/// Opens the media browser to select a photo.
+		/// </summary>
+		/// <param name="options">Pick options to use.</param>
+		/// <returns>A <see cref="FileResult"/> object containing details of the picked photo.</returns>
+		Task<FileResult> PickPhotoAsync(MediaPickerOptions? options = null);
 
-		Task<FileResult> CapturePhotoAsync(MediaPickerOptions options);
+		/// <summary>
+		/// Opens the camera to take a photo.
+		/// </summary>
+		/// <param name="options">Pick options to use.</param>
+		/// <returns>A <see cref="FileResult"/> object containing details of the captured photo.</returns>
+		Task<FileResult> CapturePhotoAsync(MediaPickerOptions? options = null);
 
-		Task<FileResult> PickVideoAsync(MediaPickerOptions options);
+		/// <summary>
+		/// Opens the media browser to select a video.
+		/// </summary>
+		/// <param name="options">Pick options to use.</param>
+		/// <returns>A <see cref="FileResult"/> object containing details of the picked video.</returns>
+		Task<FileResult> PickVideoAsync(MediaPickerOptions? options = null);
 
-		Task<FileResult> CaptureVideoAsync(MediaPickerOptions options);
+		/// <summary>
+		/// Opens the camera to take a video.
+		/// </summary>
+		/// <param name="options">Pick options to use.</param>
+		/// <returns>A <see cref="FileResult"/> object containing details of the captured video.</returns>
+		Task<FileResult> CaptureVideoAsync(MediaPickerOptions? options = null);
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/MediaPicker.xml" path="Type[@FullName='Microsoft.Maui.Essentials.MediaPicker']/Docs" />
-	public static partial class MediaPicker
+	/// <summary>
+	/// The MediaPicker API lets a user pick or take a photo or video on the device.
+	/// </summary>
+	public static class MediaPicker
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/MediaPicker.xml" path="//Member[@MemberName='IsCaptureSupported']/Docs" />
-		public static bool IsCaptureSupported
-			=> Current.IsCaptureSupported;
+		/// <summary>
+		/// Gets a value indicating whether capturing media is supported on this device.
+		/// </summary>
+		public static bool IsCaptureSupported =>
+			Default.IsCaptureSupported;
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/MediaPicker.xml" path="//Member[@MemberName='PickPhotoAsync']/Docs" />
-		public static Task<FileResult> PickPhotoAsync(MediaPickerOptions options = null) =>
-			Current.PickPhotoAsync(options);
+		/// <summary>
+		/// Opens the media browser to select a photo.
+		/// </summary>
+		/// <param name="options">Pick options to use.</param>
+		/// <returns>A <see cref="FileResult"/> object containing details of the picked photo.</returns>
+		public static Task<FileResult> PickPhotoAsync(MediaPickerOptions? options = null) =>
+			Default.PickPhotoAsync(options);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/MediaPicker.xml" path="//Member[@MemberName='CapturePhotoAsync']/Docs" />
-		public static Task<FileResult> CapturePhotoAsync(MediaPickerOptions options = null)
-		{
-			if (!IsCaptureSupported)
-				throw new FeatureNotSupportedException();
+		/// <summary>
+		/// Opens the camera to take a photo.
+		/// </summary>
+		/// <param name="options">Pick options to use.</param>
+		/// <returns>A <see cref="FileResult"/> object containing details of the captured photo.</returns>
+		public static Task<FileResult> CapturePhotoAsync(MediaPickerOptions? options = null) =>
+			Default.CapturePhotoAsync(options);
 
-			return Current.CapturePhotoAsync(options);
-		}
+		/// <summary>
+		/// Opens the media browser to select a video.
+		/// </summary>
+		/// <param name="options">Pick options to use.</param>
+		/// <returns>A <see cref="FileResult"/> object containing details of the picked video.</returns>
+		public static Task<FileResult> PickVideoAsync(MediaPickerOptions? options = null) =>
+			Default.PickVideoAsync(options);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/MediaPicker.xml" path="//Member[@MemberName='PickVideoAsync']/Docs" />
-		public static Task<FileResult> PickVideoAsync(MediaPickerOptions options = null) =>
-			Current.PickVideoAsync(options);
+		/// <summary>
+		/// Opens the camera to take a video.
+		/// </summary>
+		/// <param name="options">Pick options to use.</param>
+		/// <returns>A <see cref="FileResult"/> object containing details of the captured video.</returns>
+		public static Task<FileResult> CaptureVideoAsync(MediaPickerOptions? options = null) =>
+			Default.CaptureVideoAsync(options);
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/MediaPicker.xml" path="//Member[@MemberName='CaptureVideoAsync']/Docs" />
-		public static Task<FileResult> CaptureVideoAsync(MediaPickerOptions options = null)
-		{
-			if (!IsCaptureSupported)
-				throw new FeatureNotSupportedException();
+		static IMediaPicker? defaultImplementation;
 
-			return Current.CaptureVideoAsync(options);
-		}
+		/// <summary>
+		/// Provides the default implementation for static usage of this API.
+		/// </summary>
+		public static IMediaPicker Default =>
+			defaultImplementation ??= new MediaPickerImplementation();
 
-#nullable enable
-		static IMediaPicker? currentImplementation;
-#nullable disable
-
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static IMediaPicker Current =>
-			currentImplementation ??= new MediaPickerImplementation();
-
-		[EditorBrowsable(EditorBrowsableState.Never)]
-#nullable enable
-		public static void SetCurrent(IMediaPicker? implementation) =>
-			currentImplementation = implementation;
-#nullable disable
+		internal static void SetDefault(IMediaPicker? implementation) =>
+			defaultImplementation = implementation;
 	}
 
-	/// <include file="../../docs/Microsoft.Maui.Essentials/MediaPickerOptions.xml" path="Type[@FullName='Microsoft.Maui.Essentials.MediaPickerOptions']/Docs" />
+	/// <summary>
+	/// Pick options for picking media from the device.
+	/// </summary>
 	public class MediaPickerOptions
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/MediaPickerOptions.xml" path="//Member[@MemberName='Title']/Docs" />
-		public string Title { get; set; }
+		/// <summary>
+		/// Gets or sets the title that is displayed when picking media.
+		/// </summary>
+		/// <remarks>This title is not guaranteed to be shown on all operating systems.</remarks>
+		public string? Title { get; set; }
 	}
 }

@@ -1,34 +1,54 @@
 #nullable enable
-using System.ComponentModel;
 using System.Threading.Tasks;
-using Microsoft.Maui.Essentials.Implementations;
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.Devices
 {
+	/// <summary>
+	/// The Flashlight API has the ability to turn on or off the device's camera flash to turn it into a flashlight.
+	/// </summary>
 	public interface IFlashlight
 	{
+		/// <summary>
+		/// Turns the camera flashlight on.
+		/// </summary>
+		/// <returns>A <see cref="Task"/> object with the current status of the asynchronous operation.</returns>
 		Task TurnOnAsync();
+
+		/// <summary>
+		/// Turns the camera flashlight off.
+		/// </summary>
+		/// <returns>A <see cref="Task"/> object with the current status of the asynchronous operation.</returns>
 		Task TurnOffAsync();
 	}
-	/// <include file="../../docs/Microsoft.Maui.Essentials/Flashlight.xml" path="Type[@FullName='Microsoft.Maui.Essentials.Flashlight']/Docs" />
+
+	/// <summary>
+	/// The Flashlight API has the ability to turn on or off the device's camera flash to turn it into a flashlight.
+	/// </summary>
 	public static partial class Flashlight
 	{
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Flashlight.xml" path="//Member[@MemberName='TurnOnAsync']/Docs" />
+		/// <summary>
+		/// Turns the camera flashlight on.
+		/// </summary>
+		/// <returns>A <see cref="Task"/> object with the current status of the asynchronous operation.</returns>
 		public static Task TurnOnAsync() =>
-			Current.TurnOnAsync();
+			Default.TurnOnAsync();
 
-		/// <include file="../../docs/Microsoft.Maui.Essentials/Flashlight.xml" path="//Member[@MemberName='TurnOffAsync']/Docs" />
+		/// <summary>
+		/// Turns the camera flashlight off.
+		/// </summary>
+		/// <returns>A <see cref="Task"/> object with the current status of the asynchronous operation.</returns>
 		public static Task TurnOffAsync() =>
-			Current.TurnOffAsync();
+			Default.TurnOffAsync();
 
-		static IFlashlight? currentImplementation;
+		static IFlashlight? defaultImplementation;
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static IFlashlight Current =>
-			currentImplementation ??= new FlashlightImplementation();
+		/// <summary>
+		/// Provides the default implementation for static usage of this API.
+		/// </summary>
+		public static IFlashlight Default =>
+			defaultImplementation ??= new FlashlightImplementation();
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static void SetCurrent(IFlashlight? implementation) =>
-			currentImplementation = implementation;
+		internal static void SetDefault(IFlashlight? implementation) =>
+			defaultImplementation = implementation;
 	}
 }

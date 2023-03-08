@@ -4,7 +4,9 @@ using PlatformView = UIKit.UIView;
 using PlatformView = Android.Views.View;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
-#elif NETSTANDARD
+#elif TIZEN
+using PlatformView = Tizen.NUI.BaseComponents.View;
+#elif (NETSTANDARD || !PLATFORM)
 using PlatformView = System.Object;
 #endif
 using System;
@@ -69,11 +71,29 @@ namespace Microsoft.Maui
 			return service;
 		}
 
-		public static async Task<T> InvokeAsync<T>(this IElementHandler handler, string commandName,
+		public static Task<T> InvokeAsync<T>(this IElementHandler handler, string commandName,
 			TaskCompletionSource<T> args)
 		{
 			handler?.Invoke(commandName, args);
-			return await args.Task;
+			return args.Task;
+		}
+
+		public static T InvokeWithResult<T>(this IElementHandler handler, string commandName,
+			RetrievePlatformValueRequest<T> args)
+		{
+			handler?.Invoke(commandName, args);
+			return args.Result;
+		}
+
+		public static bool CanInvokeMappers(this IElementHandler viewHandler)
+		{
+#if ANDROID
+			var platformView = viewHandler?.PlatformView;
+
+			if (platformView is PlatformView androidView && androidView.IsDisposed())
+				return false;
+#endif
+			return true;
 		}
 	}
 }

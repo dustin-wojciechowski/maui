@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
@@ -18,7 +19,6 @@ using AndroidX.Core.Content;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Controls.Compatibility.Platform.Android;
-using Microsoft.Maui.Controls.DualScreen.Android;
 using Microsoft.Maui.Controls.Internals;
 using Microsoft.Maui.Graphics;
 using AColor = Android.Graphics.Color;
@@ -28,9 +28,12 @@ using Trace = System.Diagnostics.Trace;
 
 namespace Microsoft.Maui.Controls.Compatibility
 {
+	[Obsolete]
+#pragma warning disable CA1815 // Override equals and operator equals on value types
 	public struct InitializationOptions
 	{
 		public struct EffectScope
+#pragma warning restore CA1815 // Override equals and operator equals on value types
 		{
 			public string Name;
 			public ExportEffectAttribute[] Effects;
@@ -65,10 +68,6 @@ namespace Microsoft.Maui.Controls.Compatibility
 		static Color _ColorButtonNormal = null;
 		public static Color ColorButtonNormalOverride { get; set; }
 
-		internal static readonly bool IsMarshmallowOrNewer = OperatingSystem.IsAndroidVersionAtLeast((int)BuildVersionCodes.M);
-
-		internal static readonly bool IsNougatOrNewer = OperatingSystem.IsAndroidVersionAtLeast((int)BuildVersionCodes.N);
-
 		public static float GetFontSizeNormal(Context context)
 		{
 			float size = 50;
@@ -97,9 +96,11 @@ namespace Microsoft.Maui.Controls.Compatibility
 			return _ColorButtonNormal;
 		}
 
+		[Obsolete]
 		public static void Init(IActivationState activationState, InitializationOptions? options = null) =>
 			Init(activationState.Context, options);
 
+		[Obsolete]
 		public static void Init(IMauiContext context, InitializationOptions? options = null)
 		{
 			Assembly resourceAssembly;
@@ -113,6 +114,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 			Profile.FrameEnd();
 		}
 
+		[Obsolete]
 		public static void Init(IMauiContext context, Assembly resourceAssembly)
 		{
 			Profile.FrameBegin();
@@ -143,15 +145,18 @@ namespace Microsoft.Maui.Controls.Compatibility
 				viewInitialized(self, new ViewInitializedEventArgs { View = self, NativeView = nativeView });
 		}
 
+		[Obsolete]
 		static bool IsInitializedRenderers;
 
 		// Once we get essentials/cg converted to using startup.cs
 		// we will delete all the renderer code inside this file
+		[Obsolete]
 		internal static void RenderersRegistered()
 		{
 			IsInitializedRenderers = true;
 		}
 
+		[Obsolete]
 		internal static void RegisterCompatRenderers(IMauiContext context, InitializationOptions? maybeOptions)
 		{
 			if (!IsInitializedRenderers)
@@ -196,6 +201,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 			}
 		}
 
+		[Obsolete]
 		static void SetupInit(
 			IMauiContext context,
 			Assembly resourceAssembly,

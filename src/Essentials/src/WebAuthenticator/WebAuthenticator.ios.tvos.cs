@@ -11,11 +11,12 @@ using SafariServices;
 using ObjCRuntime;
 using UIKit;
 using WebKit;
-using Microsoft.Maui.Essentials.Implementations;
+using Microsoft.Maui.Authentication;
+using Microsoft.Maui.ApplicationModel;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Authentication
 {
-	public partial class WebAuthenticatorImplementation : IWebAuthenticator, IPlatformWebAuthenticatorCallback
+	partial class WebAuthenticatorImplementation : IWebAuthenticator, IPlatformWebAuthenticatorCallback
 	{
 #if __IOS__
 		const int asWebAuthenticationSessionErrorCodeCanceledLogin = 1;
@@ -28,6 +29,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 		TaskCompletionSource<WebAuthenticatorResult> tcsResponse;
 		UIViewController currentViewController;
 		Uri redirectUri;
+		WebAuthenticatorOptions currentOptions;
 
 #if __IOS__
 		ASWebAuthenticationSession was;
@@ -36,6 +38,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 		public async Task<WebAuthenticatorResult> AuthenticateAsync(WebAuthenticatorOptions webAuthenticatorOptions)
 		{
+			currentOptions = webAuthenticatorOptions;
 			var url = webAuthenticatorOptions?.Url;
 			var callbackUrl = webAuthenticatorOptions?.CallbackUrl;
 			var prefersEphemeralWebBrowserSession = webAuthenticatorOptions?.PrefersEphemeralWebBrowserSession ?? false;
@@ -67,13 +70,13 @@ namespace Microsoft.Maui.Essentials.Implementations
 				sf = null;
 			}
 
-			if (OperatingSystem.IsIOSVersionAtLeast(12, 0))
+			if (OperatingSystem.IsIOSVersionAtLeast(12))
 			{
 				was = new ASWebAuthenticationSession(WebUtils.GetNativeUrl(url), scheme, AuthSessionCallback);
 
-				if (OperatingSystem.IsIOSVersionAtLeast(13, 0))
+				if (OperatingSystem.IsIOSVersionAtLeast(13))
 				{
-					var ctx = new ContextProvider(Platform.GetCurrentWindow());
+					var ctx = new ContextProvider(WindowStateManager.Default.GetCurrentUIWindow());
 					was.PresentationContextProvider = ctx;
 					was.PrefersEphemeralWebBrowserSession = prefersEphemeralWebBrowserSession;
 				}
@@ -84,7 +87,9 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 				using (was)
 				{
+#pragma warning disable CA1416 // Analyzer bug https://github.com/dotnet/roslyn-analyzers/issues/5938
 					was.Start();
+#pragma warning restore CA1416
 					return await tcsResponse.Task;
 				}
 			}
@@ -92,7 +97,8 @@ namespace Microsoft.Maui.Essentials.Implementations
 			if (prefersEphemeralWebBrowserSession)
 				ClearCookies();
 
-			if (OperatingSystem.IsIOSVersionAtLeast(11, 0))
+#pragma warning disable CA1422 // 'SFAuthenticationSession' is obsoleted on: 'ios' 12.0 and later
+			if (OperatingSystem.IsIOSVersionAtLeast(11))
 			{
 				sf = new SFAuthenticationSession(WebUtils.GetNativeUrl(url), scheme, AuthSessionCallback);
 				using (sf)
@@ -101,6 +107,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 					return await tcsResponse.Task;
 				}
 			}
+#pragma warning restore CA1422
 
 			// This is only on iOS9+ but we only support 10+ in Essentials anyway
 			var controller = new SFSafariViewController(WebUtils.GetNativeUrl(url), false)
@@ -117,7 +124,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 			};
 
 			currentViewController = controller;
-			await Platform.GetCurrentUIViewController().PresentViewControllerAsync(controller, true);
+			await WindowStateManager.Default.GetCurrentUIViewController().PresentViewControllerAsync(controller, true);
 #else
 			var opened = UIApplication.SharedApplication.OpenUrl(url);
 			if (!opened)
@@ -132,13 +139,15 @@ namespace Microsoft.Maui.Essentials.Implementations
 			NSUrlCache.SharedCache.RemoveAllCachedResponses();
 
 #if __IOS__
-			if (OperatingSystem.IsIOSVersionAtLeast(11, 0))
+			if (OperatingSystem.IsIOSVersionAtLeast(11))
 			{
 				WKWebsiteDataStore.DefaultDataStore.HttpCookieStore.GetAllCookies((cookies) =>
 				{
 					foreach (var cookie in cookies)
 					{
+#pragma warning disable CA1416 // Known false positive with lambda, here we can also assert the version
 						WKWebsiteDataStore.DefaultDataStore.HttpCookieStore.DeleteCookie(cookie, null);
+#pragma warning restore CA1416
 					}
 				});
 			}
@@ -160,11 +169,12 @@ namespace Microsoft.Maui.Essentials.Implementations
 				currentViewController?.DismissViewControllerAsync(true);
 				currentViewController = null;
 
-				tcsResponse.TrySetResult(new WebAuthenticatorResult(uri));
+				tcsResponse.TrySetResult(new WebAuthenticatorResult(uri, currentOptions?.ResponseDecoder));
 				return true;
 			}
 			catch (Exception ex)
 			{
+				// TODO change this to ILogger?
 				Console.WriteLine(ex);
 			}
 			return false;
@@ -173,7 +183,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 		static bool VerifyHasUrlSchemeOrDoesntRequire(string scheme)
 		{
 			// iOS11+ uses sfAuthenticationSession which handles its own url routing
-			if (OperatingSystem.IsIOSVersionAtLeast(11, 0) || OperatingSystem.IsTvOSVersionAtLeast (11, 0))
+			if (OperatingSystem.IsIOSVersionAtLeast(11, 0) || OperatingSystem.IsTvOSVersionAtLeast(11, 0))
 				return true;
 
 			return AppInfoImplementation.VerifyHasUrlScheme(scheme);

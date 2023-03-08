@@ -8,8 +8,12 @@ using UIKit;
 
 namespace Microsoft.Maui
 {
+
+	/// <inheritdoc/>
 	public partial class EmbeddedFontLoader
 	{
+
+		/// <inheritdoc/>
 		public string? LoadFont(EmbeddedFont font)
 		{
 			try
@@ -49,7 +53,7 @@ namespace Microsoft.Maui
 			}
 			catch (Exception ex)
 			{
-				_logger?.LogWarning(ex, "Unable register font {Font} with the system.", font.FontName);
+				_serviceProvider?.CreateLogger<EmbeddedFontLoader>()?.LogWarning(ex, "Unable register font {Font} with the system.", font.FontName);
 			}
 
 			return null;

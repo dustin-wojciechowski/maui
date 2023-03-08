@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebView.WebView2;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using Windows.ApplicationModel;
 using Windows.Storage.Streams;
@@ -16,11 +17,25 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 	/// An implementation of <see cref="WebViewManager"/> that uses the Edge WebView2 browser control
 	/// to render web content in WinUI applications.
 	/// </summary>
-	public class WinUIWebViewManager : WebView2WebViewManager
+	internal class WinUIWebViewManager : WebView2WebViewManager
 	{
 		private readonly WebView2Control _webview;
 		private readonly string _hostPageRelativePath;
-		private readonly string _contentRootDir;
+		private readonly string _contentRootRelativeToAppRoot;
+		private static readonly bool _isPackagedApp;
+		private readonly ILogger _logger;
+
+		static WinUIWebViewManager()
+		{
+			try
+			{
+				_isPackagedApp = Package.Current != null;
+			}
+			catch
+			{
+				_isPackagedApp = false;
+			}
+		}
 
 		/// <summary>
 		/// Initializes a new instance of <see cref="WinUIWebViewManager"/>
@@ -30,23 +45,26 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 		/// <param name="dispatcher">A <see cref="Dispatcher"/> instance that can marshal calls to the required thread or sync context.</param>
 		/// <param name="fileProvider">Provides static content to the webview.</param>
 		/// <param name="jsComponents">The <see cref="JSComponentConfigurationStore"/>.</param>
-		/// <param name="hostPageRelativePath">Path to the host page within the <paramref name="fileProvider"/>.</param>
-		/// <param name="contentRootDir">Path to the directory containing application content files.</param>
-        /// <param name="webViewHandler">The <see cref="BlazorWebViewHandler" />.</param>
-        public WinUIWebViewManager(
+		/// <param name="contentRootRelativeToAppRoot">Path to the directory containing application content files.</param>
+		/// <param name="hostPagePathWithinFileProvider">Path to the host page within the <paramref name="fileProvider"/>.</param>
+		/// <param name="webViewHandler">The <see cref="BlazorWebViewHandler" />.</param>
+		/// <param name="logger">Logger to send log messages to.</param>
+		public WinUIWebViewManager(
 			WebView2Control webview,
 			IServiceProvider services,
 			Dispatcher dispatcher,
 			IFileProvider fileProvider,
 			JSComponentConfigurationStore jsComponents,
-			string hostPageRelativePath,
-			string contentRootDir,
-			BlazorWebViewHandler webViewHandler)
-			: base(webview, services, dispatcher, fileProvider, jsComponents, hostPageRelativePath, webViewHandler)
+			string contentRootRelativeToAppRoot,
+			string hostPagePathWithinFileProvider,
+			BlazorWebViewHandler webViewHandler,
+			ILogger logger)
+			: base(webview, services, dispatcher, fileProvider, jsComponents, contentRootRelativeToAppRoot, hostPagePathWithinFileProvider, webViewHandler, logger)
 		{
+			_logger = logger;
 			_webview = webview;
-			_hostPageRelativePath = hostPageRelativePath;
-			_contentRootDir = contentRootDir;
+			_hostPageRelativePath = hostPagePathWithinFileProvider;
+			_contentRootRelativeToAppRoot = contentRootRelativeToAppRoot;
 		}
 
 		/// <inheritdoc />
@@ -64,47 +82,83 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 
 			var requestUri = QueryStringHelper.RemovePossibleQueryString(eventArgs.Request.Uri);
 
+			_logger.HandlingWebRequest(requestUri);
+
 			// First, call into WebViewManager to see if it has a framework file for this request. It will
 			// fall back to an IFileProvider, but on WinUI it's always a NullFileProvider, so that will never
 			// return a file.
 			if (TryGetResponseContent(requestUri, allowFallbackOnHostPage, out var statusCode, out var statusMessage, out var content, out var headers)
 				&& statusCode != 404)
 			{
-				// NOTE: This is stream copying is to work around a hanging bug in WinRT with managed streams.
-				// See issue https://github.com/microsoft/CsWinRT/issues/670
-				var memStream = new MemoryStream();
-				content.CopyTo(memStream);
-				var ms = new InMemoryRandomAccessStream();
-				await ms.WriteAsync(memStream.GetWindowsRuntimeBuffer());
-
 				var headerString = GetHeaderString(headers);
-				eventArgs.Response = _coreWebView2Environment!.CreateWebResourceResponse(ms, statusCode, statusMessage, headerString);
+				_logger.ResponseContentBeingSent(requestUri, statusCode);
+				eventArgs.Response = _coreWebView2Environment!.CreateWebResourceResponse(content.AsRandomAccessStream(), statusCode, statusMessage, headerString);
 			}
-			else
+			else if (new Uri(requestUri) is Uri uri && AppOriginUri.IsBaseOf(uri))
 			{
-				// Next, try to go through WinUI Storage to find a static web asset
-				var uri = new Uri(requestUri);
-				if (new Uri(AppOrigin).IsBaseOf(uri))
-				{
-					var relativePath = new Uri(AppOrigin).MakeRelativeUri(uri).ToString();
-					if (allowFallbackOnHostPage && string.IsNullOrEmpty(relativePath))
-					{
-						relativePath = _hostPageRelativePath;
-					}
-					relativePath = Path.Combine(_contentRootDir, relativePath.Replace('/', '\\'));
+				var relativePath = AppOriginUri.MakeRelativeUri(uri).ToString();
 
+				// If the path does not end in a file extension (or is empty), it's most likely referring to a page,
+				// in which case we should allow falling back on the host page.
+				if (allowFallbackOnHostPage && !Path.HasExtension(relativePath))
+				{
+					relativePath = _hostPageRelativePath;
+				}
+				relativePath = Path.Combine(_contentRootRelativeToAppRoot, relativePath.Replace('/', '\\'));
+				statusCode = 200;
+				statusMessage = "OK";
+				var contentType = StaticContentProvider.GetResponseContentTypeOrDefault(relativePath);
+				headers = StaticContentProvider.GetResponseHeaders(contentType);
+				IRandomAccessStream? stream = null;
+				if (_isPackagedApp)
+				{
 					var winUIItem = await Package.Current.InstalledLocation.TryGetItemAsync(relativePath);
 					if (winUIItem != null)
 					{
-						statusCode = 200;
-						statusMessage = "OK";
-						var contentType = StaticContentProvider.GetResponseContentTypeOrDefault(relativePath);
-						headers = StaticContentProvider.GetResponseHeaders(contentType);
-						var headerString = GetHeaderString(headers);
-						var winUIFile = await Package.Current.InstalledLocation.GetFileAsync(relativePath);
-
-						eventArgs.Response = _coreWebView2Environment!.CreateWebResourceResponse(await winUIFile.OpenReadAsync(), statusCode, statusMessage, headerString);
+						using var contentStream = await Package.Current.InstalledLocation.OpenStreamForReadAsync(relativePath);
+						stream = await CopyContentToRandomAccessStreamAsync(contentStream);
 					}
+				}
+				else
+				{
+					var path = Path.Combine(AppContext.BaseDirectory, relativePath);
+					if (File.Exists(path))
+					{
+						using var contentStream = File.OpenRead(path);
+						stream = await CopyContentToRandomAccessStreamAsync(contentStream);
+					}
+				}
+
+				var hotReloadedContent = Stream.Null;
+				if (StaticContentHotReloadManager.TryReplaceResponseContent(_contentRootRelativeToAppRoot, requestUri, ref statusCode, ref hotReloadedContent, headers))
+				{
+					stream = await CopyContentToRandomAccessStreamAsync(hotReloadedContent);
+				}
+
+				if (stream != null)
+				{
+					var headerString = GetHeaderString(headers);
+
+					_logger.ResponseContentBeingSent(requestUri, statusCode);
+
+					eventArgs.Response = _coreWebView2Environment!.CreateWebResourceResponse(
+						stream,
+						statusCode,
+						statusMessage,
+						headerString);
+				}
+				else
+				{
+					_logger.ReponseContentNotFound(requestUri);
+				}
+
+				async Task<IRandomAccessStream> CopyContentToRandomAccessStreamAsync(Stream content)
+				{
+					using var memStream = new MemoryStream();
+					await content.CopyToAsync(memStream);
+					var randomAccessStream = new InMemoryRandomAccessStream();
+					await randomAccessStream.WriteAsync(memStream.GetWindowsRuntimeBuffer());
+					return randomAccessStream;
 				}
 			}
 
@@ -118,6 +172,8 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 			// In .NET MAUI we use autostart='false' for the Blazor script reference, so we start it up manually in this event
 			_webview.CoreWebView2.DOMContentLoaded += async (_, __) =>
 			{
+				_logger.CallingBlazorStart();
+
 				await _webview.CoreWebView2!.ExecuteScriptAsync(@"
 					Blazor.start();
 					");

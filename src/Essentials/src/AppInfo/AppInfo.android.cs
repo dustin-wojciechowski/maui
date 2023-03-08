@@ -1,64 +1,37 @@
 using System;
 using System.Globalization;
+using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.Content.Res;
 using Android.Provider;
 using AndroidX.Core.Content.PM;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.ApplicationModel
 {
-	public class AppInfoImplementation : IAppInfo
+	class AppInfoImplementation : IAppInfo
 	{
-		public string PackageName => Platform.AppContext.PackageName;
+		static readonly Lazy<string> _name = new Lazy<string>(() => Application.Context.ApplicationInfo.LoadLabel(Application.Context.PackageManager));
+		static readonly Lazy<string> _packageName = new Lazy<string>(() => Application.Context.PackageName);
+#pragma warning disable CS0618, CA1416, CA1422 // Deprecated in API 33: https://developer.android.com/reference/android/content/pm/PackageManager#getPackageInfo(java.lang.String,%20int)
+		static readonly Lazy<PackageInfo> _packageInfo = new Lazy<PackageInfo>(() => Application.Context.PackageManager.GetPackageInfo(_packageName.Value, PackageInfoFlags.MetaData));
+#pragma warning restore CS0618, CA1416, CA1422
+		static readonly Lazy<AppTheme> _requestedTheme = new Lazy<AppTheme>(GetRequestedTheme);
+		static readonly Lazy<LayoutDirection> _layoutDirection = new Lazy<LayoutDirection>(GetLayoutDirection);
 
-		public string Name
-		{
-			get
-			{
-				var applicationInfo = Platform.AppContext.ApplicationInfo;
-				var packageManager = Platform.AppContext.PackageManager;
-				return applicationInfo.LoadLabel(packageManager);
-			}
-		}
+		public string PackageName => _packageName.Value;
+
+		public string Name => _name.Value;
 
 		public System.Version Version => Utils.ParseVersion(VersionString);
 
-		public string VersionString
-		{
-			get
-			{
-				var pm = Platform.AppContext.PackageManager;
-				var packageName = Platform.AppContext.PackageName;
-				using (var info = pm.GetPackageInfo(packageName, PackageInfoFlags.MetaData))
-				{
-					return info.VersionName;
-				}
-			}
-		}
+		public string VersionString => _packageInfo.Value.VersionName;
 
-		public string BuildString
-		{
-			get
-			{
-				var pm = Platform.AppContext.PackageManager;
-				var packageName = Platform.AppContext.PackageName;
-				using (var info = pm.GetPackageInfo(packageName, PackageInfoFlags.MetaData))
-				{
-#if __ANDROID_28__
-					return PackageInfoCompat.GetLongVersionCode(info).ToString(CultureInfo.InvariantCulture);
-#else
-#pragma warning disable CS0618 // Type or member is obsolete
-					return info.VersionCode.ToString(CultureInfo.InvariantCulture);
-#pragma warning restore CS0618 // Type or member is obsolete
-#endif
-				}
-			}
-		}
+		public string BuildString => PackageInfoCompat.GetLongVersionCode(_packageInfo.Value).ToString(CultureInfo.InvariantCulture);
 
 		public void ShowSettingsUI()
 		{
-			var context = Platform.GetCurrentActivity(false) ?? Platform.AppContext;
+			var context = ActivityStateManager.Default.GetCurrentActivity(false) ?? Application.Context;
 
 			var settingsIntent = new Intent();
 			settingsIntent.SetAction(global::Android.Provider.Settings.ActionApplicationDetailsSettings);
@@ -66,40 +39,32 @@ namespace Microsoft.Maui.Essentials.Implementations
 			settingsIntent.SetData(global::Android.Net.Uri.Parse("package:" + PackageName));
 
 			var flags = ActivityFlags.NewTask | ActivityFlags.NoHistory | ActivityFlags.ExcludeFromRecents;
-
-#if __ANDROID_24__
-			if (Platform.HasApiLevelN)
-				flags |= ActivityFlags.LaunchAdjacent;
-#endif
 			settingsIntent.SetFlags(flags);
 
 			context.StartActivity(settingsIntent);
 		}
 
-		public AppTheme RequestedTheme
-			=> (Platform.AppContext.Resources.Configuration.UiMode & UiMode.NightMask) switch
-			{
-				UiMode.NightYes => AppTheme.Dark,
-				UiMode.NightNo => AppTheme.Light,
-				_ => AppTheme.Unspecified
-			};
+		static AppTheme GetRequestedTheme() => (Application.Context.Resources.Configuration.UiMode & UiMode.NightMask) switch
+		{
+			UiMode.NightYes => AppTheme.Dark,
+			UiMode.NightNo => AppTheme.Light,
+			_ => AppTheme.Unspecified
+		};
+
+		public AppTheme RequestedTheme => _requestedTheme.Value;
 
 		public AppPackagingModel PackagingModel => AppPackagingModel.Packaged;
 
-		public LayoutDirection RequestedLayoutDirection
+		static LayoutDirection GetLayoutDirection()
 		{
-			get
-			{
-				if (!OperatingSystem.IsAndroidVersionAtLeast(17))
-					return LayoutDirection.LeftToRight;
+			var config = Application.Context.Resources?.Configuration;
+			if (config == null)
+				return LayoutDirection.Unknown;
 
-				var config = Platform.AppContext.Resources?.Configuration;
-				if (config == null)
-					return LayoutDirection.Unknown;
-
-				return (config.LayoutDirection == Android.Views.LayoutDirection.Rtl) ? LayoutDirection.RightToLeft :
-					LayoutDirection.LeftToRight;
-			}
+			return (config.LayoutDirection == Android.Views.LayoutDirection.Rtl) ? LayoutDirection.RightToLeft :
+				LayoutDirection.LeftToRight;
 		}
+
+		public LayoutDirection RequestedLayoutDirection => _layoutDirection.Value;
 	}
 }

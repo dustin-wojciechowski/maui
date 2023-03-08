@@ -1,25 +1,36 @@
 using System;
 using System.Threading.Tasks;
+using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.Hardware.Camera2;
 using Android.OS;
-
+using Microsoft.Maui.ApplicationModel;
 using Camera = Android.Hardware.Camera;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Devices
 {
-	public class FlashlightImplementation : IFlashlight
+	class FlashlightImplementation : IFlashlight
 	{
+		static CameraManager cameraManager;
+
+		static CameraManager CameraManager =>
+			cameraManager ??= Application.Context.GetSystemService(Context.CameraService) as CameraManager;
+
 		static readonly object locker = new object();
 
 #pragma warning disable CS0618
+#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1422 // Validate platform compatibility
 		Camera camera;
+#pragma warning restore CA1416 // Validate platform compatibility
+#pragma warning restore CA1422 // Validate platform compatibility
 #pragma warning restore CS0618
 		SurfaceTexture surface;
 
 		internal bool IsSupported
-			=> Platform.HasSystemFeature(PackageManager.FeatureCameraFlash);
+			=> PlatformUtils.HasSystemFeature(PackageManager.FeatureCameraFlash);
 
 		internal bool AlwaysUseCameraApi { get; set; } = false;
 
@@ -51,17 +62,16 @@ namespace Microsoft.Maui.Essentials.Implementations
 			{
 				lock (locker)
 				{
-					if (OperatingSystem.IsAndroidVersionAtLeast((int)BuildVersionCodes.M) && !AlwaysUseCameraApi)
+					if (OperatingSystem.IsAndroidVersionAtLeast(23) && !AlwaysUseCameraApi)
 					{
-						var cameraManager = Platform.CameraManager;
-						foreach (var id in cameraManager.GetCameraIdList())
+						foreach (var id in CameraManager.GetCameraIdList())
 						{
-							var hasFlash = cameraManager.GetCameraCharacteristics(id).Get(CameraCharacteristics.FlashInfoAvailable);
+							var hasFlash = CameraManager.GetCameraCharacteristics(id).Get(CameraCharacteristics.FlashInfoAvailable);
 							if (Java.Lang.Boolean.True.Equals(hasFlash))
 							{
 								try
 								{
-									cameraManager.SetTorchMode(id, switchOn);
+									CameraManager.SetTorchMode(id, switchOn);
 									break;
 								}
 								catch (Exception ex)
@@ -79,10 +89,14 @@ namespace Microsoft.Maui.Essentials.Implementations
 								surface = new SurfaceTexture(0);
 
 #pragma warning disable CS0618 // Camera types are deprecated in Android 10+
+#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1422 // Validate platform compatibility
 							camera = Camera.Open();
+
 
 							// Nexus 5 and some devices require a preview texture
 							camera.SetPreviewTexture(surface);
+
 						}
 
 						var param = camera.GetParameters();
@@ -101,10 +115,12 @@ namespace Microsoft.Maui.Essentials.Implementations
 							camera.StopPreview();
 							camera.Release();
 							camera.Dispose();
-#pragma warning restore CS0618 // Type or member is obsolete
 							camera = null;
 							surface.Dispose();
 							surface = null;
+#pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning restore CA1416 // Validate platform compatibility
+#pragma warning restore CA1422 // Validate platform compatibility
 						}
 					}
 				}

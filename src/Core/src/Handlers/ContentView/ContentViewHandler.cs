@@ -5,7 +5,9 @@ using PlatformView = Microsoft.Maui.Platform.ContentView;
 using PlatformView = Microsoft.Maui.Platform.ContentViewGroup;
 #elif WINDOWS
 using PlatformView = Microsoft.Maui.Platform.ContentPanel;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformView = Microsoft.Maui.Platform.ContentViewGroup;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 
@@ -13,26 +15,30 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class ContentViewHandler : IContentViewHandler
 	{
-		public static IPropertyMapper<IContentView, IContentViewHandler> Mapper = new PropertyMapper<IContentView, IContentViewHandler>(ViewMapper)
-		{
-			[nameof(IContentView.Content)] = MapContent,
-		};
+		public static IPropertyMapper<IContentView, IContentViewHandler> Mapper =
+			new PropertyMapper<IContentView, IContentViewHandler>(ViewMapper)
+			{
+				[nameof(IContentView.Content)] = MapContent,
+#if TIZEN
+				[nameof(IContentView.Background)] = MapBackground,
+#endif
+			};
 
-		public static CommandMapper<IPicker, IContentViewHandler> CommandMapper = new(ViewCommandMapper)
-		{
-		};
+		public static CommandMapper<IContentView, IContentViewHandler> CommandMapper =
+			new(ViewCommandMapper);
 
 		public ContentViewHandler() : base(Mapper, CommandMapper)
 		{
 
 		}
 
-		protected ContentViewHandler(IPropertyMapper mapper, CommandMapper? commandMapper = null)
-			: base(mapper, commandMapper ?? ViewCommandMapper)
+		public ContentViewHandler(IPropertyMapper? mapper)
+			: base(mapper ?? Mapper, CommandMapper)
 		{
 		}
 
-		public ContentViewHandler(IPropertyMapper? mapper = null) : base(mapper ?? Mapper)
+		public ContentViewHandler(IPropertyMapper? mapper, CommandMapper? commandMapper)
+			: base(mapper ?? Mapper, commandMapper ?? CommandMapper)
 		{
 		}
 

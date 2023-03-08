@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ObjCRuntime;
 using UIKit;
 
@@ -6,11 +6,15 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class SliderHandler : ViewHandler<ISlider, UISlider>
 	{
-		static UIColor? DefaultMinTrackColor;
-		static UIColor? DefaultMaxTrackColor;
-		static UIColor? DefaultThumbColor;
+		protected override UISlider CreatePlatformView()
+		{
+			var platformSlider = new UISlider { Continuous = true };
 
-		protected override UISlider CreatePlatformView() => new UISlider { Continuous = true };
+			if (OperatingSystem.IsMacCatalystVersionAtLeast(15) && platformSlider.TraitCollection.UserInterfaceIdiom == UIUserInterfaceIdiom.Mac)
+				platformSlider.PreferredBehavioralStyle = UIBehavioralStyle.Pad;
+
+			return platformSlider;
+		}
 
 		protected override void ConnectHandler(UISlider platformView)
 		{
@@ -30,13 +34,6 @@ namespace Microsoft.Maui.Handlers
 			platformView.RemoveTarget(OnTouchUpControlEvent, UIControlEvent.TouchUpInside | UIControlEvent.TouchUpOutside);
 		}
 
-		void SetupDefaults(UISlider platformView)
-		{
-			DefaultMinTrackColor = platformView.MinimumTrackTintColor;
-			DefaultMaxTrackColor = platformView.MaximumTrackTintColor;
-			DefaultThumbColor = platformView.ThumbTintColor;
-		}
-
 		public static void MapMinimum(ISliderHandler handler, ISlider slider)
 		{
 			handler.PlatformView?.UpdateMinimum(slider);
@@ -54,17 +51,17 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapMinimumTrackColor(ISliderHandler handler, ISlider slider)
 		{
-			handler.PlatformView?.UpdateMinimumTrackColor(slider, DefaultMinTrackColor);
+			handler.PlatformView?.UpdateMinimumTrackColor(slider);
 		}
 
 		public static void MapMaximumTrackColor(ISliderHandler handler, ISlider slider)
 		{
-			handler.PlatformView?.UpdateMaximumTrackColor(slider, DefaultMaxTrackColor);
+			handler.PlatformView?.UpdateMaximumTrackColor(slider);
 		}
 
 		public static void MapThumbColor(ISliderHandler handler, ISlider slider)
 		{
-			handler.PlatformView?.UpdateThumbColor(slider, DefaultThumbColor);
+			handler.PlatformView?.UpdateThumbColor(slider);
 		}
 
 		public static void MapThumbImageSource(ISliderHandler handler, ISlider slider)

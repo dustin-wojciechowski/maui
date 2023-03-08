@@ -1,29 +1,22 @@
-using System;
+﻿using System;
 using Foundation;
+using Microsoft.Maui.Graphics;
 using UIKit;
 
 namespace Microsoft.Maui.Handlers
 {
 	public partial class SearchBarHandler : ViewHandler<ISearchBar, MauiSearchBar>
 	{
-		UIColor? _defaultTextColor;
-
-		UIColor? _cancelButtonTextColorDefaultDisabled;
-		UIColor? _cancelButtonTextColorDefaultHighlighted;
-		UIColor? _cancelButtonTextColorDefaultNormal;
-
 		UITextField? _editor;
 
 		public UITextField? QueryEditor => _editor;
 
 		protected override MauiSearchBar CreatePlatformView()
 		{
-			var searchBar = new MauiSearchBar() { ShowsCancelButton = true, BarStyle = UIBarStyle.Default };
+			var searchBar = new MauiSearchBar() { BarStyle = UIBarStyle.Default };
 
-			if (PlatformVersion.IsAtLeast(13))
-				_editor = searchBar.SearchTextField;
-			else
-				_editor = searchBar.FindDescendantView<UITextField>();
+			_editor = searchBar.GetSearchTextField();
+
 
 			return searchBar;
 		}
@@ -33,13 +26,18 @@ namespace Microsoft.Maui.Handlers
 			platformView.CancelButtonClicked += OnCancelClicked;
 			platformView.SearchButtonClicked += OnSearchButtonClicked;
 			platformView.TextSetOrChanged += OnTextPropertySet;
+			platformView.OnMovedToWindow += OnMovedToWindow;
 			platformView.ShouldChangeTextInRange += ShouldChangeText;
-
-			platformView.OnEditingStarted += OnEditingStarted;
-			platformView.OnEditingStopped += OnEditingEnded;
+			platformView.EditingChanged += OnEditingChanged;
 
 			base.ConnectHandler(platformView);
-			SetupDefaults(platformView);
+		}
+
+		void OnMovedToWindow(object? sender, EventArgs e)
+		{
+			// The cancel button doesn't exist until the control has moved to the window
+			// so we fire this off again so it can set the color
+			UpdateValue(nameof(ISearchBar.CancelButtonColor));
 		}
 
 		protected override void DisconnectHandler(MauiSearchBar platformView)
@@ -48,26 +46,32 @@ namespace Microsoft.Maui.Handlers
 			platformView.SearchButtonClicked -= OnSearchButtonClicked;
 			platformView.TextSetOrChanged -= OnTextPropertySet;
 			platformView.ShouldChangeTextInRange -= ShouldChangeText;
-
-			platformView.OnEditingStarted -= OnEditingStarted;
-			platformView.OnEditingStopped -= OnEditingEnded;
-
+			platformView.OnMovedToWindow -= OnMovedToWindow;
+			platformView.EditingChanged -= OnEditingChanged;
 
 			base.DisconnectHandler(platformView);
 		}
 
-		void SetupDefaults(UISearchBar platformView)
+		public override Size GetDesiredSize(double widthConstraint, double heightConstraint)
 		{
-			_defaultTextColor = QueryEditor?.TextColor;
-
-			var cancelButton = platformView.FindDescendantView<UIButton>();
-
-			if (cancelButton != null)
+			if (double.IsInfinity(widthConstraint) || double.IsInfinity(heightConstraint))
 			{
-				_cancelButtonTextColorDefaultNormal = cancelButton.TitleColor(UIControlState.Normal);
-				_cancelButtonTextColorDefaultHighlighted = cancelButton.TitleColor(UIControlState.Highlighted);
-				_cancelButtonTextColorDefaultDisabled = cancelButton.TitleColor(UIControlState.Disabled);
+				PlatformView.SizeToFit();
+				return new Size(PlatformView.Frame.Width, PlatformView.Frame.Height);
 			}
+
+			return base.GetDesiredSize(widthConstraint, heightConstraint);
+		}
+
+		// TODO: NET8 make this public
+		internal static void MapBackground(ISearchBarHandler handler, ISearchBar searchBar)
+		{
+			handler.PlatformView?.UpdateBackground(searchBar);
+		}
+
+		public static void MapIsEnabled(ISearchBarHandler handler, ISearchBar searchBar)
+		{
+			handler.PlatformView?.UpdateIsEnabled(searchBar);
 		}
 
 		public static void MapText(ISearchBarHandler handler, ISearchBar searchBar)
@@ -126,7 +130,7 @@ namespace Microsoft.Maui.Handlers
 		public static void MapTextColor(ISearchBarHandler handler, ISearchBar searchBar)
 		{
 			if (handler is SearchBarHandler platformHandler)
-				handler.QueryEditor?.UpdateTextColor(searchBar, platformHandler._defaultTextColor);
+				handler.QueryEditor?.UpdateTextColor(searchBar);
 		}
 
 		public static void MapIsTextPredictionEnabled(ISearchBarHandler handler, ISearchBar searchBar)
@@ -146,32 +150,26 @@ namespace Microsoft.Maui.Handlers
 
 		public static void MapCancelButtonColor(ISearchBarHandler handler, ISearchBar searchBar)
 		{
-			if (handler is SearchBarHandler platformHandler)
-			{
-				handler.PlatformView?.UpdateCancelButton(
-					searchBar,
-					platformHandler._cancelButtonTextColorDefaultNormal,
-					platformHandler._cancelButtonTextColorDefaultHighlighted,
-					platformHandler._cancelButtonTextColorDefaultDisabled);
-			}
+			handler.PlatformView?.UpdateCancelButton(searchBar);
 		}
 
 		void OnCancelClicked(object? sender, EventArgs args)
 		{
 			if (VirtualView != null)
 				VirtualView.Text = string.Empty;
-
-			PlatformView?.ResignFirstResponder();
 		}
 
 		void OnSearchButtonClicked(object? sender, EventArgs e)
 		{
 			VirtualView?.SearchButtonPressed();
-			PlatformView?.ResignFirstResponder();
 		}
 
-		void OnTextPropertySet(object? sender, UISearchBarTextChangedEventArgs a) =>
+		void OnTextPropertySet(object? sender, UISearchBarTextChangedEventArgs a)
+		{
 			VirtualView.UpdateText(a.SearchText);
+
+			UpdateCancelButtonVisibility();
+		}
 
 		bool ShouldChangeText(UISearchBar searchBar, NSRange range, string text)
 		{
@@ -179,16 +177,20 @@ namespace Microsoft.Maui.Handlers
 			return newLength <= VirtualView?.MaxLength;
 		}
 
-		void OnEditingEnded(object? sender, EventArgs e)
+		void OnEditingChanged(object? sender, EventArgs e)
 		{
-			if (VirtualView != null)
-				VirtualView.IsFocused = false;
+			if (VirtualView == null || _editor == null)
+				return;
+
+			VirtualView.UpdateText(_editor.Text);
+
+			UpdateCancelButtonVisibility();
 		}
 
-		void OnEditingStarted(object? sender, EventArgs e)
+		void UpdateCancelButtonVisibility()
 		{
-			if (VirtualView != null)
-				VirtualView.IsFocused = true;
+			if (PlatformView.ShowsCancelButton != VirtualView.ShouldShowCancelButton())
+				UpdateValue(nameof(ISearchBar.CancelButtonColor));
 		}
 	}
 }

@@ -1,17 +1,18 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
+using Microsoft.Maui.Controls.Internals;
+using Microsoft.Maui.Controls.Platform;
+using Microsoft.Maui.Graphics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.Maui.Controls.Internals;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using WBrush = Microsoft.UI.Xaml.Media.Brush;
-using Microsoft.Maui.Graphics;
-using Microsoft.Maui.Controls.Platform;
 
 namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 {
+	[System.Obsolete(Compatibility.Hosting.MauiAppBuilderExtensions.UseMapperInstead)]
 	public class TimePickerRenderer : ViewRenderer<TimePicker, Microsoft.UI.Xaml.Controls.TimePicker>
 	{
 		WBrush _defaultBrush;
@@ -124,7 +125,7 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 		{
 			Control.UpdateFlowDirection(Element);
 		}
-		
+
 		void PickerOnForceInvalidate(object sender, EventArgs eventArgs)
 		{
 			((IVisualElementController)Element)?.InvalidateMeasure(InvalidationTrigger.SizeRequestChanged);
@@ -141,7 +142,12 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.UWP
 			if (timePicker == null)
 				return;
 
-			bool timePickerIsDefault = timePicker.FontFamily == null && timePicker.FontSize == Device.GetNamedSize(NamedSize.Default, typeof(TimePicker), true) && timePicker.FontAttributes == FontAttributes.None;
+			bool timePickerIsDefault =
+				timePicker.FontFamily == null &&
+#pragma warning disable CS0612 // Type or member is obsolete
+				timePicker.FontSize == Device.GetNamedSize(NamedSize.Default, typeof(TimePicker), true) &&
+#pragma warning restore CS0612 // Type or member is obsolete
+				timePicker.FontAttributes == FontAttributes.None;
 
 			if (timePickerIsDefault && !_fontApplied)
 				return;

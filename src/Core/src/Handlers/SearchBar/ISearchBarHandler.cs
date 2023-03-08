@@ -7,8 +7,11 @@ using PlatformView = AndroidX.AppCompat.Widget.SearchView;
 using QueryEditor = Android.Widget.EditText;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.Controls.AutoSuggestBox;
-using QueryEditor = Microsoft.Maui.Platform.MauiSearchTextBox;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+using QueryEditor = Microsoft.UI.Xaml.Controls.AutoSuggestBox;
+#elif TIZEN
+using PlatformView = Microsoft.Maui.Platform.MauiSearchBar;
+using QueryEditor = Tizen.UIExtensions.NUI.Entry;
+#elif (NETSTANDARD || !PLATFORM) || (NET6_0_OR_GREATER && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 using QueryEditor = System.Object;
 #endif

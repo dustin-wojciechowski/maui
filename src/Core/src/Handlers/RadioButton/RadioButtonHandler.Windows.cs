@@ -1,12 +1,18 @@
-﻿using Microsoft.UI.Xaml;
+﻿using System;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 namespace Microsoft.Maui.Handlers
 {
-	public partial class RadioButtonHandler : ViewHandler<IRadioButton, MauiRadioButton>
+	public partial class RadioButtonHandler : ViewHandler<IRadioButton, RadioButton>
 	{
-		protected override MauiRadioButton CreatePlatformView() => new MauiRadioButton();
+		protected override RadioButton CreatePlatformView()
+		{
+			// Note: We set a random GUID as the GroupName as part of the work-around in https://github.com/dotnet/maui/issues/11418
+			return new RadioButton() { GroupName = Guid.NewGuid().ToString() };
+		}
 
-		protected override void ConnectHandler(MauiRadioButton platformView)
+		protected override void ConnectHandler(RadioButton platformView)
 		{
 			platformView.Checked += OnCheckedOrUnchecked;
 			platformView.Unchecked += OnCheckedOrUnchecked;
@@ -14,12 +20,17 @@ namespace Microsoft.Maui.Handlers
 			base.ConnectHandler(platformView);
 		}
 
-		protected override void DisconnectHandler(MauiRadioButton platformView)
+		protected override void DisconnectHandler(RadioButton platformView)
 		{
 			platformView.Checked -= OnCheckedOrUnchecked;
 			platformView.Unchecked -= OnCheckedOrUnchecked;
 
 			base.DisconnectHandler(platformView);
+		}
+
+		public static void MapBackground(IRadioButtonHandler handler, IRadioButton radioButton)
+		{
+			handler.PlatformView?.UpdateBackground(radioButton);
 		}
 
 		public static void MapIsChecked(IRadioButtonHandler handler, IRadioButton radioButton)

@@ -1,57 +1,73 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Maui.Graphics;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
 namespace Microsoft.Maui.Platform
 {
-	public class NavigationRootManager
+	public partial class NavigationRootManager
 	{
-		IMauiContext _mauiContext;
+		Window _platformWindow;
 		WindowRootView _rootView;
-		MauiToolbar? _windowHeader;
-		IMenuBar? _menuBar;
+		bool _disconnected = true;
+		bool _isActiveRootManager;
 
-		public NavigationRootManager(IMauiContext mauiContext)
+		public NavigationRootManager(Window platformWindow)
 		{
-			_mauiContext = mauiContext;
+			_platformWindow = platformWindow;
 			_rootView = new WindowRootView();
 			_rootView.BackRequested += OnBackRequested;
 			_rootView.OnApplyTemplateFinished += OnApplyTemplateFinished;
+			_rootView.OnAppTitleBarChanged += OnAppTitleBarChanged;
 		}
 
-		internal bool UseCustomAppTitleBar { get; set; } = true;
+		void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
+		{
+			_platformWindow
+				.GetWindow()?
+				.BackButtonClicked();
+		}
+
+		internal ContentControl? AppTitleBarContentControl => _rootView.AppTitleBarContentControl;
 		internal FrameworkElement? AppTitleBar => _rootView.AppTitleBar;
+		internal MauiToolbar? Toolbar => _rootView.Toolbar;
 
 		void OnApplyTemplateFinished(object? sender, EventArgs e)
 		{
 			if (_rootView.AppTitleBar != null)
 			{
-				var platformWindow = _mauiContext.GetPlatformWindow();
-				platformWindow.ExtendsContentIntoTitleBar = true;
+				_platformWindow.ExtendsContentIntoTitleBar = true;
 				UpdateAppTitleBar(true);
-			}
-
-			if (_rootView.NavigationViewControl != null)
-			{
-				_rootView.NavigationViewControl.HeaderControl = _windowHeader;
 			}
 		}
 
-		void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
+		void OnAppTitleBarChanged(object? sender, EventArgs e)
 		{
-			_mauiContext.GetPlatformWindow().GetWindow()?.BackButtonClicked();
+			UpdateAppTitleBar(true);
+			if (AppTitleBar != null)
+			{
+				var handle = _platformWindow.GetWindowHandle();
+				var result = PlatformMethods.GetCaptionButtonsBound(handle);
+				_rootView.UpdateAppTitleBar(result, _platformWindow.ExtendsContentIntoTitleBar);
+			}
 		}
 
 		public FrameworkElement RootView => _rootView;
 
-		public virtual void Connect(IView view)
+		public virtual void Connect(UIElement platformView)
 		{
-			bool firstConnect = _rootView.Content == null;
-			var platformView = view.ToPlatform(_mauiContext);
+			if (_rootView.Content != null)
+			{
+				// Clear out the toolbar that was set from the previous content
+				SetToolbar(null);
+
+				// We need to make sure to clear out the root view content 
+				// before creating the new view.
+				// Otherwise the new view might try to act on the old content.
+				// It might have code in the handler that retrieves this class.
+				_rootView.Content = null;
+			}
 
 			NavigationView rootNavigationView;
 			if (platformView is NavigationView nv)
@@ -69,45 +85,68 @@ namespace Microsoft.Maui.Platform
 				{
 					rootNavigationView = new RootNavigationView();
 				}
-				
+
 				rootNavigationView.Content = platformView;
 				_rootView.Content = rootNavigationView;
 			}
 
-			if (firstConnect)
+			if (_disconnected)
 			{
-				var platformWindow = _mauiContext.GetPlatformWindow();
-				platformWindow.Activated += OnWindowActivated;
-
-				UpdateAppTitleBar(true);
-				SetWindowTitle(_mauiContext.GetPlatformWindow().GetWindow()?.Title);
+				_isActiveRootManager = true;
+				_platformWindow.Activated += OnWindowActivated;
 			}
+
+			_disconnected = false;
 		}
 
 		public virtual void Disconnect()
 		{
-			_mauiContext.GetPlatformWindow().Activated -= OnWindowActivated;
+			_platformWindow.Activated -= OnWindowActivated;
+			SetToolbar(null);
 			_rootView.Content = null;
+			_disconnected = true;
 		}
 
 		internal void UpdateAppTitleBar(bool isActive)
 		{
-			if (!UseCustomAppTitleBar)
-				return;
-
-			var platformWindow = _mauiContext.GetPlatformWindow();
-			if (_rootView.AppTitleBar != null)
+			if (_rootView.AppTitleBarContentControl != null &&
+				_platformWindow.ExtendsContentIntoTitleBar)
 			{
 				if (isActive)
 				{
 					_rootView.Visibility = UI.Xaml.Visibility.Visible;
-					platformWindow.SetTitleBar(_rootView.AppTitleBar);
+					SetTitleBar(_rootView.AppTitleBarContentControl);
+
+					SetWindowTitle(_platformWindow.GetWindow()?.Title);
 				}
 				else
 				{
 					_rootView.Visibility = UI.Xaml.Visibility.Collapsed;
 				}
 			}
+			else
+			{
+				SetTitleBar(null);
+			}
+
+			if (!_isActiveRootManager && isActive)
+			{
+				_platformWindow.Activated += OnWindowActivated;
+			}
+			else if (!isActive)
+			{
+				_platformWindow.Activated -= OnWindowActivated;
+			}
+
+			_isActiveRootManager = isActive;
+		}
+
+		void SetTitleBar(UIElement? titleBar)
+		{
+			if (_platformWindow is MauiWinUIWindow mauiWindow)
+				mauiWindow.MauiCustomTitleBar = titleBar;
+			else
+				_platformWindow.SetTitleBar(titleBar);
 		}
 
 		internal void SetWindowTitle(string? title)
@@ -115,32 +154,23 @@ namespace Microsoft.Maui.Platform
 			_rootView.SetWindowTitle(title);
 		}
 
-		internal void SetMenuBar(IMenuBar? menuBar)
+		internal void SetMenuBar(MenuBar? menuBar)
 		{
-			_menuBar = menuBar;
-
-			if (_windowHeader == null)
-				return;
-
-			if (menuBar != null)
-				_windowHeader.SetMenuBar((MenuBar)menuBar.ToPlatform(_mauiContext));
-			else
-				_windowHeader.SetMenuBar(null);
+			_rootView.MenuBar = menuBar;
 		}
 
-		internal void SetToolbar(FrameworkElement toolBar)
+		internal void SetToolbar(FrameworkElement? toolBar)
 		{
-			_windowHeader = toolBar as MauiToolbar;
-			SetMenuBar(_menuBar);
-
-			if (_rootView.NavigationViewControl != null)
-			{
-				_rootView.NavigationViewControl.HeaderControl = _windowHeader;
-			}
+			_rootView.Toolbar = toolBar as MauiToolbar;
 		}
 
 		void OnWindowActivated(object sender, WindowActivatedEventArgs e)
 		{
+			if (!_isActiveRootManager)
+			{
+				_platformWindow.Activated -= OnWindowActivated;
+			}
+
 			if (_rootView.AppTitle == null)
 				return;
 
@@ -154,7 +184,7 @@ namespace Microsoft.Maui.Platform
 			else
 			{
 				_rootView.AppTitle.Foreground = defaultForegroundBrush;
-				SetWindowTitle(_mauiContext.GetPlatformWindow().GetWindow()?.Title);
+				SetWindowTitle(_platformWindow.GetWindow()?.Title);
 			}
 		}
 	}
