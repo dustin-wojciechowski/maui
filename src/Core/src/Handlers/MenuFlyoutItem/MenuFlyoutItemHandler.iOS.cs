@@ -62,14 +62,22 @@ namespace Microsoft.Maui.Handlers
 					"}");
 			}
 
+			var action = UIAction.Create(
+				title: VirtualView.Text,
+				image: uiImage,
+				identifier: null,
+				handler: (_) => VirtualView?.Clicked());
+
+			/*
 			var command = UICommand.Create(
 				title: VirtualView.Text,
 				uiImage,
 				selector,
-				new NSString($"{index}"));
+				new NSString($"{index}")); */
 
 			menus[index] = VirtualView;
-			return command;
+			//return command;
+			return action;
 		}
 
 		internal static void Execute(UICommand uICommand)
