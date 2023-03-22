@@ -52,7 +52,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			var contentView = new MyTestContentView();
 			contentView.LoadFromXaml(xaml);
 
-			IList<Element> internalChildren = contentView.InternalChildren;
+			IList<Element> internalChildren = contentView.ObservableChildren;
 			Assert.Equal(internalChildren[0], contentView.TemplateChildObtained);
 		}
 
@@ -74,7 +74,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			var contentView = new MyTestTemplatedView();
 			contentView.LoadFromXaml(xaml);
 
-			IList<Element> internalChildren = contentView.InternalChildren;
+			IList<Element> internalChildren = contentView.ObservableChildren;
 			Assert.Equal(internalChildren[0], contentView.TemplateChildObtained);
 		}
 

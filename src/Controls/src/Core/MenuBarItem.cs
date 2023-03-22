@@ -36,10 +36,10 @@ namespace Microsoft.Maui.Controls
 		}
 
 		ReadOnlyCastingList<Element, IMenuElement> _logicalChildren;
-		readonly ObservableCollection<IMenuElement> _menus = new ObservableCollection<IMenuElement>();
+		readonly List<IMenuElement> _menus = new List<IMenuElement>();
 
-		internal override IReadOnlyList<Element> LogicalChildrenInternal =>
-			_logicalChildren ??= new ReadOnlyCastingList<Element, IMenuElement>(_menus);
+		private protected override IList<Element> InternalChildren
+			=> new CastingList<Element, IMenuElement>(_menus);
 
 		public IMenuElement this[int index]
 		{

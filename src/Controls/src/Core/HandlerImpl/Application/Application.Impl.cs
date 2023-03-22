@@ -82,8 +82,8 @@ namespace Microsoft.Maui.Controls
 
 			if (window is Element windowElement)
 			{
-				var oldIndex = InternalChildren.IndexOf(windowElement);
-				InternalChildren.RemoveAt(oldIndex);
+				var oldIndex = ObservableChildren.IndexOf(windowElement);
+				ObservableChildren.RemoveAt(oldIndex);
 				windowElement.Parent = null;
 				OnChildRemoved(windowElement, oldIndex);
 			}
@@ -135,7 +135,7 @@ namespace Microsoft.Maui.Controls
 			if (window is Element windowElement)
 			{
 				windowElement.Parent = this;
-				InternalChildren.Add(windowElement);
+				ObservableChildren.Add(windowElement);
 				OnChildAdded(windowElement);
 			}
 

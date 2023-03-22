@@ -20,7 +20,7 @@ namespace Microsoft.Maui.Controls
 			set { SetValue(ControlTemplateProperty, value); }
 		}
 
-		IList<Element> IControlTemplated.InternalChildren => InternalChildren;
+		IList<Element> IControlTemplated.InternalChildren => ObservableChildren;
 
 		Element IControlTemplated.TemplateRoot { get; set; }
 
@@ -41,9 +41,9 @@ namespace Microsoft.Maui.Controls
 			double heightRequest = HeightRequest;
 			var childRequest = new SizeRequest();
 
-			if ((widthRequest == -1 || heightRequest == -1) && InternalChildren.Count > 0)
+			if ((widthRequest == -1 || heightRequest == -1) && ObservableChildren.Count > 0)
 			{
-				childRequest = ((View)InternalChildren[0]).Measure(widthConstraint, heightConstraint, MeasureFlags.IncludeMargins);
+				childRequest = ((View)ObservableChildren[0]).Measure(widthConstraint, heightConstraint, MeasureFlags.IncludeMargins);
 			}
 
 			return new SizeRequest

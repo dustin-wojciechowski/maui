@@ -391,9 +391,9 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 		bool HasVisibleChildren()
 		{
-			for (var index = 0; index < InternalChildren.Count; index++)
+			for (var index = 0; index < ObservableChildren.Count; index++)
 			{
-				var child = (VisualElement)InternalChildren[index];
+				var child = (VisualElement)ObservableChildren[index];
 				if (child.IsVisible)
 					return true;
 			}

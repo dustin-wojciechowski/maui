@@ -111,16 +111,14 @@ namespace Microsoft.Maui.Controls
 			}
 		}
 
-		internal override IReadOnlyList<Element> LogicalChildrenInternal =>
-			_logicalChildren ??= new ReadOnlyCollection<Element>(InternalChildren);
+		private protected override IList<Element> InternalChildren => ObservableChildren;
+		internal ObservableCollection<Element> ObservableChildren { get; } = new ObservableCollection<Element>();
 
 		/// <include file="../../docs/Microsoft.Maui.Controls/Application.xml" path="//Member[@MemberName='NavigationProxy']/Docs/*" />
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		public NavigationProxy? NavigationProxy { get; private set; }
 
 		internal IResourceDictionary SystemResources => _systemResources.Value;
-
-		ObservableCollection<Element> InternalChildren { get; } = new ObservableCollection<Element>();
 
 		/// <include file="../../docs/Microsoft.Maui.Controls/Application.xml" path="//Member[@MemberName='SetAppIndexingProvider']/Docs/*" />
 		[EditorBrowsable(EditorBrowsableState.Never)]

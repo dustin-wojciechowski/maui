@@ -89,13 +89,13 @@ namespace Microsoft.Maui.Controls
 			var newView = (View)newValue;
 			if (oldView != null)
 			{
-				self.InternalChildren.Remove(oldView);
+				self.ObservableChildren.Remove(oldView);
 				oldView.ParentOverride = null;
 			}
 
 			if (newView != null)
 			{
-				self.InternalChildren.Add(newView);
+				self.ObservableChildren.Add(newView);
 				newView.ParentOverride = await TemplateUtilities.FindTemplatedParentAsync((Element)bindable);
 			}
 		}

@@ -34,7 +34,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 #pragma warning disable CS0618 // Type or member is obsolete
 			VerticalOptions = HorizontalOptions = LayoutOptions.FillAndExpand;
 #pragma warning restore CS0618 // Type or member is obsolete
-			_children = new RelativeElementCollection(InternalChildren, this);
+			_children = new RelativeElementCollection(ObservableChildren, this);
 			_children.Parent = this;
 
 			_platformConfigurationRegistry = new Lazy<PlatformConfigurationRegistry<RelativeLayout>>(() =>

@@ -139,12 +139,12 @@ namespace Microsoft.Maui.Controls
 				if (_content != null)
 				{
 					_content.SizeChanged -= ContentSizeChanged;
-					InternalChildren.Remove(_content);
+					ObservableChildren.Remove(_content);
 				}
 				_content = value;
 				if (_content != null)
 				{
-					InternalChildren.Add(_content);
+					ObservableChildren.Add(_content);
 					_content.SizeChanged += ContentSizeChanged;
 				}
 

@@ -11,15 +11,15 @@ namespace Microsoft.Maui.Controls.Compatibility
 	{
 		protected override void LayoutChildren(double x, double y, double width, double height)
 		{
-			if (!InternalChildren.Any())
+			if (!ObservableChildren.Any())
 				return;
 
 			// grab a snapshot of this grid, fully-measured, so we can do the layout
 			var structure = new GridStructure(this, width, height);
 
-			for (var index = 0; index < InternalChildren.Count; index++)
+			for (var index = 0; index < ObservableChildren.Count; index++)
 			{
-				var child = (View)InternalChildren[index];
+				var child = (View)ObservableChildren[index];
 				if (!child.IsVisible)
 					continue;
 				int r = GetRow(child);
@@ -48,7 +48,7 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 		protected override SizeRequest OnMeasure(double widthConstraint, double heightConstraint)
 		{
-			if (!InternalChildren.Any())
+			if (!ObservableChildren.Any())
 				return new SizeRequest(new Size(0, 0));
 
 			// grab a snapshot of this grid, fully-measured, so we can do the layout
@@ -182,9 +182,9 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 							double actualHeight = row.ActualHeight;
 							double minimumHeight = row.MinimumHeight;
-							for (var index = 0; index < grid.InternalChildren.Count; index++)
+							for (var index = 0; index < grid.ObservableChildren.Count; index++)
 							{
-								var child = (View)(grid.InternalChildren[index]);
+								var child = (View)(grid.ObservableChildren[index]);
 								if (!child.IsVisible || GetRowSpan(child) != rowspan || !IsInRow(child, i) || NumberOfUnsetRowHeight(child) > 1)
 									continue;
 								double assignedWidth = GetAssignedColumnWidth(child);
@@ -215,9 +215,9 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 							double actualWidth = col.ActualWidth;
 							double minimumWidth = col.MinimumWidth;
-							for (var index = 0; index < grid.InternalChildren.Count; index++)
+							for (var index = 0; index < grid.ObservableChildren.Count; index++)
 							{
-								var child = (View)(grid.InternalChildren)[index];
+								var child = (View)(grid.ObservableChildren)[index];
 								if (!child.IsVisible || GetColumnSpan(child) != colspan || !IsInColumn(child, i) || NumberOfUnsetColumnWidth(child) > 1)
 									continue;
 								double assignedWidth = GetAssignedColumnWidth(child);
@@ -489,17 +489,17 @@ namespace Microsoft.Maui.Controls.Compatibility
 				_rows = grid.RowDefinitions == null ? new List<RowDefinition>() : grid.RowDefinitions.ToList();
 
 				int lastRow = -1;
-				for (var index = 0; index < grid.InternalChildren.Count; index++)
+				for (var index = 0; index < grid.ObservableChildren.Count; index++)
 				{
-					Element w = grid.InternalChildren[index];
+					Element w = grid.ObservableChildren[index];
 					lastRow = Math.Max(lastRow, GetRow(w) + GetRowSpan(w) - 1);
 				}
 				lastRow = Math.Max(lastRow, grid.RowDefinitions.Count - 1);
 
 				int lastCol = -1;
-				for (var index = 0; index < grid.InternalChildren.Count; index++)
+				for (var index = 0; index < grid.ObservableChildren.Count; index++)
 				{
-					Element w = grid.InternalChildren[index];
+					Element w = grid.ObservableChildren[index];
 					lastCol = Math.Max(lastCol, GetColumn(w) + GetColumnSpan(w) - 1);
 				}
 				lastCol = Math.Max(lastCol, grid.ColumnDefinitions.Count - 1);
@@ -523,9 +523,9 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 			void ExpandLastAutoColumnIfNeeded(Grid grid, double width, bool expandToRequest)
 			{
-				for (var index = 0; index < grid.InternalChildren.Count; index++)
+				for (var index = 0; index < grid.ObservableChildren.Count; index++)
 				{
-					Element element = grid.InternalChildren[index];
+					Element element = grid.ObservableChildren[index];
 					var child = (View)element;
 					if (!child.IsVisible)
 						continue;
@@ -548,9 +548,9 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 			void ExpandLastAutoRowIfNeeded(Grid grid, double height, bool expandToRequest)
 			{
-				for (var index = 0; index < grid.InternalChildren.Count; index++)
+				for (var index = 0; index < grid.ObservableChildren.Count; index++)
 				{
-					Element element = grid.InternalChildren[index];
+					Element element = grid.ObservableChildren[index];
 					var child = (View)element;
 					if (!child.IsVisible)
 						continue;
@@ -656,9 +656,9 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 							double actualWidth = col.ActualWidth;
 							double minimumWidth = col.MinimumWidth;
-							for (var index = 0; index < grid.InternalChildren.Count; index++)
+							for (var index = 0; index < grid.ObservableChildren.Count; index++)
 							{
-								var child = (View)(grid.InternalChildren)[index];
+								var child = (View)(grid.ObservableChildren)[index];
 								if (!child.IsVisible || GetColumnSpan(child) != colspan || !IsInColumn(child, i) || NumberOfUnsetColumnWidth(child) > 1)
 									continue;
 								double assignedWidth = GetAssignedColumnWidth(child);
@@ -717,9 +717,9 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 							double actualHeight = row.ActualHeight;
 							double minimumHeight = row.MinimumHeight;
-							for (var index = 0; index < grid.InternalChildren.Count; index++)
+							for (var index = 0; index < grid.ObservableChildren.Count; index++)
 							{
-								var child = (View)(grid.InternalChildren)[index];
+								var child = (View)(grid.ObservableChildren)[index];
 								if (!child.IsVisible || GetRowSpan(child) != rowspan || !IsInRow(child, i) || NumberOfUnsetRowHeight(child) > 1)
 									continue;
 								double assignedHeight = GetAssignedRowHeight(child);

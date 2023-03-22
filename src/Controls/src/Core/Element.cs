@@ -97,7 +97,72 @@ namespace Microsoft.Maui.Controls
 			}
 		}
 
-		internal virtual IReadOnlyList<Element> LogicalChildrenInternal => EmptyChildren;
+		private protected virtual IList<Element> InternalChildren { get; private set; }
+
+		IReadOnlyList<Element> LogicalChildrenInternal
+		{
+			get
+			{
+				return InternalChildren?.AsReadOnly() ?? EmptyChildren;
+			}
+		}
+
+#pragma warning disable RS0016 // Add public types and members to the declared API
+		public void AddLogicalChild(Element element)
+#pragma warning restore RS0016 // Add public types and members to the declared API
+		{
+			if (element == null)
+			{
+				return;
+			}
+
+			InternalChildren ??= new List<Element>();
+			_logicalChildrenInternal ??= new ReadOnlyCollection<Element>(InternalChildren);
+
+			InternalChildren.Add(element);
+			element.Parent = this;
+			OnChildAdded(element);
+			VisualDiagnostics.OnChildAdded(this, element);
+		}
+
+#pragma warning disable RS0016 // Add public types and members to the declared API
+		public void RemoveLogicalChild(Element element)
+#pragma warning restore RS0016 // Add public types and members to the declared API
+		{
+			// TODO throw exception?
+			if (InternalChildren is null)
+				return;
+
+			if (element == null)
+			{
+				return;
+			}
+
+			element.Parent = null;
+
+			if (!InternalChildren.Contains(element))
+				return;
+
+			var oldLogicalIndex = InternalChildren.IndexOf(element);
+			InternalChildren.Remove(element);
+			OnChildRemoved(element, oldLogicalIndex);
+			VisualDiagnostics.OnChildRemoved(this, element, oldLogicalIndex);
+		}
+
+		internal void ClearLogicalChildren()
+		{
+			if (InternalChildren is null)
+				return;
+
+			if (LogicalChildrenInternal == EmptyChildren)
+				return;
+
+			// Reverse for-loop, so children can be removed while iterating
+			for (int i = InternalChildren.Count - 1; i >= 0; i--)
+			{
+				RemoveLogicalChild(InternalChildren[i]);
+			}
+		}
 
 		internal IEnumerable<Element> AllChildren
 		{
@@ -118,13 +183,16 @@ namespace Microsoft.Maui.Controls
 		// return null by default so we don't need to foreach over an empty collection in OnPropertyChanged
 		internal virtual IEnumerable<Element> ChildrenNotDrawnByThisElement => null;
 
-		IReadOnlyList<Element> IElementController.LogicalChildren => LogicalChildrenInternal;
+		IReadOnlyList<Element> _logicalChildrenInternal;
 
-		/// <include file="../../docs/Microsoft.Maui.Controls/Element.xml" path="//Member[@MemberName='LogicalChildren']/Docs/*" />
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		[Obsolete("Do not use! This is to be removed! Just used by Hot Reload! To be replaced with IVisualTreeElement!")]
-		public ReadOnlyCollection<Element> LogicalChildren =>
-			new ReadOnlyCollection<Element>(new TemporaryWrapper(LogicalChildrenInternal));
+		IReadOnlyList<Element> IElementController.LogicalChildren =>
+			_logicalChildrenInternal ??= EmptyChildren;
+
+		///// <include file="../../docs/Microsoft.Maui.Controls/Element.xml" path="//Member[@MemberName='LogicalChildren']/Docs/*" />
+		//[EditorBrowsable(EditorBrowsableState.Never)]
+		//[Obsolete("Do not use! This is to be removed! Just used by Hot Reload! To be replaced with IVisualTreeElement!")]
+		//public ReadOnlyCollection<Element> LogicalChildren =>
+		//	new ReadOnlyCollection<Element>(LogicalChildrenInternal);
 
 		internal bool Owned { get; set; }
 
@@ -200,7 +268,7 @@ namespace Microsoft.Maui.Controls
 					((IElementDefinition)RealParent).AddResourcesChangedListener(OnParentResourcesChanged);
 				}
 
-				object context = value != null ? value.BindingContext : null;
+				object context = value?.BindingContext;
 				if (value != null)
 				{
 					value.SetChildInheritedBindingContext(this, context);
@@ -322,7 +390,8 @@ namespace Microsoft.Maui.Controls
 			base.SetDynamicResource(property, key);
 		}
 
-		IReadOnlyList<Maui.IVisualTreeElement> IVisualTreeElement.GetVisualChildren() => LogicalChildrenInternal;
+		IReadOnlyList<Maui.IVisualTreeElement> IVisualTreeElement.GetVisualChildren()
+			=> LogicalChildrenInternal;
 
 		IVisualTreeElement IVisualTreeElement.GetVisualParent() => this.Parent;
 
