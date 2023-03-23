@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace FlyoutProject.Models
 {
-    internal class FlyoutPageItem
-    {
-        public string Title { get; set; }
-        public string IconSource { get; set; }
-        public Type TargetType { get; set; }
-    }
+	internal class FlyoutPageItem
+	{
+		public string Title { get; set; }
+		public string IconSource { get; set; }
+		public Type TargetType { get; set; }
+	}
 }
