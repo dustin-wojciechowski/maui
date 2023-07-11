@@ -61,7 +61,7 @@ steps:
       workingDirectory: ${{ parameters.checkoutDirectory }}
       retryCountOnTaskFailure: 2
   - ${{ else }}:
-    - pwsh: ./build.ps1 -Script eng/devices/${{ parameters.platform }}.cake --binlog="$(LogDirectory)" ${{ parameters.cakeArgs }}
+    - pwsh: ./build.ps1 -Script eng/devices/${{ parameters.platform }}.cake --binlog="$(LogDirectory)" ${{ parameters.cakeArgs }} --results="$(TestResultsDirectory)"
       displayName: $(Agent.JobName)
       workingDirectory: ${{ parameters.checkoutDirectory }}
       retryCountOnTaskFailure: 2
