@@ -112,7 +112,7 @@ stages:
           parameters:
             platform: windows
             path: $(PROJECT_PATH)
-            windowsPackageId: '$(PACKAGE_ID)'
+            windowsPackageId: $(PACKAGE_ID)
             device: windows
             provisionatorChannel: ${{ parameters.provisionatorChannel }}
             agentPoolAccessToken: ${{ parameters.agentPoolAccessToken }}
