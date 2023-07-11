@@ -107,15 +107,15 @@ stages:
               PROJECT_PATH: ${{ project.windows }}
               PACKAGE_ID: ${{ project.windowsPackageId }}
       steps:
-          - template: device-tests-steps.yml
-            parameters:
-              platform: windows
-              path: $(PROJECT_PATH)
-              windowsPackageId: $(PACKAGE_ID)
-              device: windows
-              provisionatorChannel: ${{ parameters.provisionatorChannel }}
-              agentPoolAccessToken: ${{ parameters.agentPoolAccessToken }}
-              artifactName: ${{ parameters.artifactName }}
-              artifactItemPattern: ${{ parameters.artifactItemPattern }}
-              checkoutDirectory: ${{ parameters.checkoutDirectory }}
-              useArtifacts: ${{ parameters.useArtifacts }}
+        - template: device-tests-steps.yml
+          parameters:
+            platform: windows
+            path: $(PROJECT_PATH)
+            windowsPackageId: $(PACKAGE_ID)
+            device: windows
+            provisionatorChannel: ${{ parameters.provisionatorChannel }}
+            agentPoolAccessToken: ${{ parameters.agentPoolAccessToken }}
+            artifactName: ${{ parameters.artifactName }}
+            artifactItemPattern: ${{ parameters.artifactItemPattern }}
+            checkoutDirectory: ${{ parameters.checkoutDirectory }}
+            useArtifacts: ${{ parameters.useArtifacts }}
