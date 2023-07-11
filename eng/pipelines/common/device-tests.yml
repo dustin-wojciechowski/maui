@@ -104,8 +104,9 @@ stages:
           # create all the variables used for the matrix
           ${{ each project in parameters.projects }}:
             ${{ if ne(project.windows, '') }}:
-              PROJECT_PATH: ${{ project.windows }}
-              PACKAGE_ID: ${{ project.windowsPackageId }}
+              ${{ replace(coalesce(project.desc, project.name), ' ', '_') }}:
+                PROJECT_PATH: ${{ project.windows }}
+                PACKAGE_ID: ${{ project.windowsPackageId }}
       steps:
         - template: device-tests-steps.yml
           parameters:
