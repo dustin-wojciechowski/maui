@@ -76,18 +76,6 @@ namespace Microsoft.Maui.Dispatching
 			Post();
 		}
 
-		void Post()
-		{
-			if (IsCallbackPosted())
-			{
-				return;
-			}
-
-			_handler.PostDelayed(_runnable, (long)Interval.TotalMilliseconds);
-
-			SetHasCallbacks(true);
-		}
-
 		/// <inheritdoc/>
 		public void Stop()
 		{
@@ -114,6 +102,18 @@ namespace Microsoft.Maui.Dispatching
 			{
 				Post();
 			}
+		}
+
+		void Post()
+		{
+			if (IsCallbackPosted())
+			{
+				return;
+			}
+
+			_handler.PostDelayed(_runnable, (long)Interval.TotalMilliseconds);
+
+			SetHasCallbacks(true);
 		}
 
 		bool IsCallbackPosted()
