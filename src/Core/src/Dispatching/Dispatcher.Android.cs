@@ -123,6 +123,7 @@ namespace Microsoft.Maui.Dispatching
 				return _handler.HasCallbacks(_runnable);
 			}
 
+			// Below API 29 we'll manually track whether there's a posted callback
 			return _hasCallbacks;
 		}
 
@@ -133,6 +134,8 @@ namespace Microsoft.Maui.Dispatching
 				return;
 			}
 
+			// We only need to worry about tracking this if we're below API 29; after that,
+			// we can just ask the Handler with the HasCallBacks() method. 
 			_hasCallbacks = hasCallbacks;
 		}
 	}
