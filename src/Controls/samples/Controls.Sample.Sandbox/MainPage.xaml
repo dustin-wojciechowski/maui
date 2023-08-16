@@ -3,4 +3,169 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="Maui.Controls.Sample.MainPage"
     xmlns:local="clr-namespace:Maui.Controls.Sample">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Spacing="50"
+            Padding="30,0"
+            VerticalOptions="Center">
+
+            <Image
+                Source="dotnet_bot.png"
+                SemanticProperties.Description="Cute dot net bot waving hi to you!"
+                HeightRequest="200"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="Hello, World!"
+                SemanticProperties.HeadingLevel="Level1"
+                FontSize="32"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="Welcome to .NET Multi-platform App UI"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Welcome to dot net Multi platform App U I"
+                FontSize="18"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="CounterBtn"
+                Text="Click me"
+                SemanticProperties.Hint="Counts the number of times you click"
+                HorizontalOptions="Center" >
+                <Button.Shadow>
+                    <Shadow
+				Brush="Black"
+				Opacity="1"
+				Radius="10"
+				Offset="0,0" />
+                </Button.Shadow>
+            </Button>
+
+            <Button
+			x:Name="RoundBtn"
+			HorizontalOptions="Center"
+			Text="Shadow"
+			CornerRadius="60"
+			HeightRequest="120"
+			WidthRequest="120">
+                <Button.Shadow>
+                    <Shadow
+					Brush="Black"
+					Opacity="1"
+					Radius="10"
+					Offset="0,0" />
+                </Button.Shadow>
+            </Button>
+
+            <Editor Text="All shadow - No text!!!">
+                <Editor.Shadow>
+                    <Shadow
+					Brush="Black"
+					Opacity="1"
+					Radius="10"
+					Offset="0,0" />
+                </Editor.Shadow>
+            </Editor>
+
+            <Border Stroke="Green"
+                StrokeThickness="1"
+                BackgroundColor="transparent"
+                HeightRequest="100"
+                    WidthRequest="100">  
+                <Border.Shadow>
+                    <Shadow Brush="Black"
+            Radius="100"
+            Opacity="0.8"/>
+                </Border.Shadow>
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="100" />
+                </Border.StrokeShape>
+                <Button Text="Another one" />
+            </Border>
+
+            <Border Stroke="Green"
+                    StrokeThickness="1"
+                    BackgroundColor="white"
+                    HeightRequest="100"
+                        WidthRequest="100">
+                                <Border.Shadow>
+                                    <Shadow Brush="Black"
+                Radius="100"
+                Opacity="0.8"/>
+                </Border.Shadow>
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="100" />
+                </Border.StrokeShape>
+                <Button Text="Another one" />
+            </Border>
+
+            <!--<BoxView 
+                    BackgroundColor="transparent"
+                    MaximumHeightRequest="200"
+                    MaximumWidthRequest="300"
+                    MinimumHeightRequest="100"
+                    MinimumWidthRequest="200">
+                <BoxView.Shadow>
+                    <Shadow Brush="Black"
+                        Radius="40"
+                        Opacity="0.8"/>
+                </BoxView.Shadow>
+                <Button Text="Another one" />
+            </BoxView>-->
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+    <!--<StackLayout Orientation="Vertical" Spacing="50" Margin="30">
+        <Button
+		x:Name="RoundBtn"
+		HorizontalOptions="Center"
+		Text="Shadow"
+		CornerRadius="60"
+		HeightRequest="120"
+		WidthRequest="120">
+            <Button.Shadow>
+                <Shadow
+				Radius="10"
+                Offset="0,0"
+				Brush="Black"
+				Opacity="1"
+            />
+            </Button.Shadow>
+        </Button>
+
+        <Editor Text="All shadow - No text!!!">
+            <Editor.Shadow>
+                <Shadow
+				Brush="Black"
+				Opacity="1"
+				Radius="10"
+				Offset="0,0" />
+            </Editor.Shadow>
+        </Editor>
+
+    </StackLayout>-->
+
+
+    <Grid>
+        <Grid RowDefinitions="Auto, *">
+            <CollectionView x:Name="cv1" BackgroundColor="LightSalmon" >
+                <!--<CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="30">
+                        <Label Text="{Binding .}" Padding="50" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>-->
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Horizontal" />
+                </CollectionView.ItemsLayout>
+            </CollectionView>
+            <Label Text="A Label under the CollectionView" Grid.Row="1" />
+        </Grid>
+        <Button Grid.Row="2" Text="add" Clicked="ButtonAdd_Clicked" HorizontalOptions="End" VerticalOptions="Start" />
+    </Grid>
+
 </ContentPage>
