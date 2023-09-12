@@ -1,7 +1,11 @@
 ﻿using System.Drawing;
 using Microsoft.Maui.Appium;
 using NUnit.Framework;
+using OpenQA.Selenium.Appium.Mac;
 using OpenQA.Selenium.Appium.MultiTouch;
+using OpenQA.Selenium.Appium.Windows;
+using OpenQA.Selenium.Interactions;
+//using OpenQA.Selenium.Appium.Windows;
 using TestUtils.Appium.UITests;
 
 namespace Microsoft.Maui.AppiumTests.Issues
@@ -24,7 +28,7 @@ namespace Microsoft.Maui.AppiumTests.Issues
 				throw new InvalidOperationException("Cannot run test. Missing driver to run quick tap actions.");
 			}
 
-			var tapAreaResult = App.WaitForElement(_tapAreaId);
+			var tapAreaResult = App.WaitForElement(_tapAreaId, $"Timed out waiting for {_tapAreaId}");
 			var tapArea = tapAreaResult[0].Rect;
 
 			// The test harness coordinates are absolute
@@ -41,19 +45,28 @@ namespace Microsoft.Maui.AppiumTests.Issues
 			var expectedX1 = point1.X - tapArea.X;
 			var expectedX2 = point2.X - tapArea.X;
 
-			// Just calling Tap twice will be too slow; we need to queue up the actions so they happen quickly
-			var actionsList = new TouchAction(app2.Driver);
+			if (app2.Driver is WindowsDriver)
+			{
+				// Windows will throw an error if we try to execute Taps with a TouchAction, so we'll just use TapCoordinates instead
+				app2.TapCoordinates(point1.X, point1.Y);
+				app2.TapCoordinates(point2.X, point2.Y);
+			}
+			else
+			{
+				// Just calling Tap twice will be too slow; we need to queue up the actions so they happen quickly
+				var actionsList = new TouchAction(app2.Driver);
 
-			// Tap the first point, then the second point
-			actionsList.Tap(point1.X, point1.Y).Tap(point2.X, point2.Y);
-			app2.Driver.PerformTouchAction(actionsList);
+				// Tap the first point, then the second point
+				actionsList.Tap(point1.X, point1.Y).Tap(point2.X, point2.Y);
+				app2.Driver.PerformTouchAction(actionsList);
+			}
 
 			// The results for each tap should show up in the labels on the screen; find the text
 			// of each tap result and check to see that it meets the expected values
-			var result = App.WaitForElement("Tap1Label");
+			var result = App.WaitForElement("Tap1Label", $"Timed out waiting for Tap1Label");
 			AssertCorrectTapLocation(result[0].Text, expectedX1, expectedY, "First");
 
-			result = App.WaitForElement("Tap2Label");
+			result = App.WaitForElement("Tap2Label", $"Timed out waiting for Tap2Label");
 			AssertCorrectTapLocation(result[0].Text, expectedX2, expectedY, "Second");
 		}
 
