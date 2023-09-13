@@ -44,9 +44,15 @@ namespace Microsoft.Maui.AppiumTests
 			var textAfterClick = remote.GetEventLabel().Text;
 
 			if (clickable is null || passthru is null)
+			{
+				// some tests are really basic so have no need for fancy checks
 				Assert.AreEqual($"Event: {test} (SUCCESS 1)", textAfterClick);
+			}
 			else if (clickable == true || passthru == true)
+			{
+				// if the button is clickable or taps pass through to the base button
 				Assert.AreEqual($"Event: {test} (SUCCESS 1)", textAfterClick);
+			}
 			else if (Device == TestDevice.Android)
 			{
 				// TODO: Android is broken with everything passing through so we just use that
@@ -55,7 +61,13 @@ namespace Microsoft.Maui.AppiumTests
 				Assert.AreEqual($"Event: {test} (SUCCESS 1)", textAfterClick);
 			}
 			else
+			{
+				// sometimes nothing can happen, so try test that
+				Task.Delay(500).Wait(); // just make sure that nothing happened
+
+				textAfterClick = remote.GetEventLabel().Text;
 				Assert.AreEqual($"Event: {test} (none)", textBeforeClick);
+			}
 		}
 	}
 }
