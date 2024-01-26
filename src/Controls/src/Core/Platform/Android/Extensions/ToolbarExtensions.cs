@@ -318,6 +318,7 @@ namespace Microsoft.Maui.Controls.Platform
 					return;
 
 				menuitem.SetTitle(newTitle);
+				menuitem.SetIcon(null);
 			}
 
 			menuitem.SetEnabled(item.IsEnabled);
