@@ -7,7 +7,7 @@ namespace Microsoft.Maui.Platform
 	public static class PickerExtensions
 	{
 		public static void UpdateTitle(this MauiPicker platformPicker, IPicker picker) =>
-			platformPicker.UpdatePicker(picker);
+			platformPicker.UpdatePickerTitle(picker);
 
 		public static void UpdateTitleColor(this MauiPicker platformPicker, IPicker picker) =>
  			platformPicker.SetTitleColor(picker);
@@ -38,14 +38,19 @@ namespace Microsoft.Maui.Platform
 			platformPicker.AttributedPlaceholder = nsAttributedString;
 		}
 
+		internal static void UpdatePickerTitle(this MauiPicker platformPicker, IPicker picker)
+		{
+			platformPicker.UpdateAttributedPlaceholder(new NSAttributedString(picker.Title ?? string.Empty, null, picker?.TitleColor?.ToPlatform()));
+		}
+
 		internal static void UpdatePicker(this MauiPicker platformPicker, IPicker picker, int? newSelectedIndex = null)
 		{
 			var selectedIndex = newSelectedIndex ?? picker.SelectedIndex;
 
-			// Revert to placeholder/title if nothing selected
-			platformPicker.Text = selectedIndex == -1
-				? (picker.Title ?? string.Empty)
-				: picker.GetItem(selectedIndex);
+			if (selectedIndex != -1)
+			{
+				platformPicker.Text = picker.GetItem(selectedIndex);
+			}
 
 			var pickerView = platformPicker.UIPickerView;
 			pickerView?.ReloadAllComponents();
