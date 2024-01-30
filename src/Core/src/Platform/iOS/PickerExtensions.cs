@@ -10,28 +10,13 @@ namespace Microsoft.Maui.Platform
 			platformPicker.UpdatePickerTitle(picker);
 
 		public static void UpdateTitleColor(this MauiPicker platformPicker, IPicker picker) =>
- 			platformPicker.SetTitleColor(picker);
+ 			platformPicker.UpdatePickerTitle(picker);
 
 		public static void UpdateTextColor(this MauiPicker platformPicker, IPicker picker) =>
 			platformPicker.TextColor = picker.TextColor?.ToPlatform();
 
 		public static void UpdateSelectedIndex(this MauiPicker platformPicker, IPicker picker) =>
 			platformPicker.UpdatePicker(picker, picker.SelectedIndex);
-
-		internal static void SetTitleColor(this MauiPicker platformPicker, IPicker picker)
-		{
-			var title = picker.Title;
-
-			if (string.IsNullOrEmpty(title))
-				return;
-
-			var titleColor = picker.TitleColor;
-
-			if (titleColor == null)
-				return;
-
-			platformPicker.UpdateAttributedPlaceholder(new NSAttributedString(title, null, titleColor.ToPlatform()));
-		}
 
 		internal static void UpdateAttributedPlaceholder(this MauiPicker platformPicker, NSAttributedString nsAttributedString)
 		{
