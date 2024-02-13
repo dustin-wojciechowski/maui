@@ -66,13 +66,16 @@ namespace Microsoft.Maui.Handlers
 
 		protected virtual DatePickerDialog CreateDatePickerDialog(int year, int month, int day)
 		{
-			var dialog = new DatePickerDialog(Context!, (o, e) =>
+			void OnDateSelectedCallback(object? obj, DatePickerDialog.DateSetEventArgs e)
 			{
 				if (VirtualView != null)
 				{
 					VirtualView.Date = e.Date;
+					VirtualView.IsFocused = false;
 				}
-			}, year, month, day);
+			}
+
+			var dialog = new DatePickerDialog(Context!, OnDateSelectedCallback, year, month, day);
 
 			return dialog;
 		}
@@ -130,6 +133,7 @@ namespace Microsoft.Maui.Handlers
 			if (_dialog != null && _dialog.IsShowing)
 				return;
 
+			VirtualView.IsFocused = true;
 			var date = VirtualView.Date;
 			ShowPickerDialog(date.Year, date.Month - 1, date.Day);
 		}
@@ -141,8 +145,18 @@ namespace Microsoft.Maui.Handlers
 			else
 			{
 				EventHandler? setDateLater = null;
+				EventHandler? dismiss = null;
 				setDateLater = (sender, e) => { _dialog!.UpdateDate(year, month, day); _dialog.ShowEvent -= setDateLater; };
 				_dialog.ShowEvent += setDateLater;
+				dismiss = (sender, e) =>
+				{
+					if (VirtualView != null)
+					{
+						VirtualView.IsFocused = false;
+					}
+					_dialog.DismissEvent -= dismiss;
+				};
+				_dialog.DismissEvent += dismiss;
 			}
 
 			_dialog.Show();
