@@ -78,7 +78,7 @@ namespace UITest.Appium
 			var appId = config.GetProperty<string>("AppId");
 			if (!string.IsNullOrWhiteSpace(appId))
 			{
-				options.AddAdditionalAppiumOption(IOSMobileCapabilityType.BundleId, appId);
+				options.AddAdditionalAppiumOption(MobileCapabilityType.NoReset, "true");
 				options.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, appId);
 				options.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, $"{appId}.MainActivity");
 			}
