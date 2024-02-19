@@ -79,6 +79,8 @@ namespace UITest.Appium
 			if (!string.IsNullOrWhiteSpace(appId))
 			{
 				options.AddAdditionalAppiumOption(IOSMobileCapabilityType.BundleId, appId);
+				options.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppPackage, appId);
+				options.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, $"{appId}.MainActivity");
 			}
 
 			return options;
