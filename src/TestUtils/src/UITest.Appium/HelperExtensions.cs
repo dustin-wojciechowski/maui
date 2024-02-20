@@ -540,7 +540,7 @@ namespace UITest.Appium
 		{
 			app.CommandExecutor.Execute("back", ImmutableDictionary<string, object>.Empty);
 		}
-
+    
 		/// <summary>
 		/// Return the AppId of the running app. This is used inside any appium command that want the app id
 		/// </summary>
@@ -559,6 +559,26 @@ namespace UITest.Appium
 			}
 
 			throw new InvalidOperationException("AppId not found");
+		}
+
+		/// <summary>
+		/// Check if element has focused
+		/// </summary>
+		/// <param name="app">Represents the main gateway to interact with an app.</param>
+		/// <param name="id">Target element</param>
+		/// <returns>Returns <see langword="true"/> if focused</returns>
+		/// <exception cref="InvalidOperationException"></exception>
+		public static bool IsFocused(this IApp app, string id)
+		{
+			if (app is not AppiumApp aaa)
+			{
+				throw new InvalidOperationException($"IsFocused is only supported on AppiumApp");
+			}
+
+			var activeElement = aaa.Driver.SwitchTo().ActiveElement();
+			var element = (AppiumDriverElement)app.WaitForElement(id);
+
+			return element.AppiumElement.Equals(activeElement);
 		}
 
 		static IUIElement Wait(Func<IUIElement> query,
