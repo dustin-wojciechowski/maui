@@ -83,24 +83,15 @@ namespace UITest.Appium
 			if (_app?.Driver is null)
 				return CommandResponse.FailedEmptyResponse;
 
-			// Terminate App not supported on Mac
-			if (_app.GetTestDevice() == TestDevice.Mac)
-			{
-				_app.Driver.ResetApp();
-			}
-			else if (_app.GetTestDevice() == TestDevice.Windows)
+			if (_app.GetTestDevice() == TestDevice.Windows)
 			{
 				CloseApp(parameters);
-				_app.Driver.LaunchApp();
+				_app.Driver.ActivateApp(_app.GetAppId());
 			}
 			else
 			{
 				_app.Driver.TerminateApp(_app.GetAppId());
-
-				if (_app.GetTestDevice() == TestDevice.iOS)
-					_app.Driver.ActivateApp(_app.GetAppId());
-				else
-					_app.Driver.LaunchApp();
+				_app.Driver.ActivateApp(_app.GetAppId());
 			}
 
 			return CommandResponse.SuccessEmptyResponse;
