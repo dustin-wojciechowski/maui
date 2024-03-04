@@ -1,4 +1,5 @@
 ﻿using OpenQA.Selenium.Appium.Android;
+using OpenQA.Selenium.Appium.Windows;
 using UITest.Core;
 
 namespace UITest.Appium
@@ -63,7 +64,14 @@ namespace UITest.Appium
 			if (_app?.Driver is null)
 				return CommandResponse.FailedEmptyResponse;
 
-			_app.Driver.ActivateApp(_app.GetAppId());
+			if (_app.Driver is WindowsDriver wd)
+			{
+				wd.SwitchTo().Window(wd.WindowHandles.First());
+			}
+			else
+			{
+				_app.Driver.ActivateApp(_app.GetAppId());
+			}
 
 			return CommandResponse.SuccessEmptyResponse;
 		}
@@ -74,6 +82,8 @@ namespace UITest.Appium
 				return CommandResponse.FailedEmptyResponse;
 
 			_app.Driver.BackgroundApp();
+			if (_app.GetTestDevice() == TestDevice.Android)
+				Thread.Sleep(500);
 
 			return CommandResponse.SuccessEmptyResponse;
 		}
@@ -102,7 +112,8 @@ namespace UITest.Appium
 			if (_app?.Driver is null)
 				return CommandResponse.FailedEmptyResponse;
 
-			_app.Driver.TerminateApp(_app.GetAppId());
+			if(_app.AppState != ApplicationState.NotRunning)
+				_app.Driver.TerminateApp(_app.GetAppId());
 
 			return CommandResponse.SuccessEmptyResponse;
 		}
