@@ -10,6 +10,7 @@ namespace Microsoft.Maui.Handlers
 	{
 		MauiTimePicker? _timePicker;
 		TimePickerDialog? _dialog;
+		EventHandler? dismiss;
 
 		protected override MauiTimePicker CreatePlatformView()
 		{
@@ -27,13 +28,13 @@ namespace Microsoft.Maui.Handlers
 			if (_dialog != null)
 			{
 				_dialog.Hide();
+				_dialog.DismissEvent -= dismiss;
 				_dialog = null;
 			}
 		}
 
 		protected virtual TimePickerDialog CreateTimePickerDialog(int hour, int minute)
 		{
-			EventHandler? dismiss = null;
 			void onTimeSetCallback(object? obj, TimePickerDialog.TimeSetEventArgs args)
 			{
 				if (VirtualView == null || PlatformView == null)

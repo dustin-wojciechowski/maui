@@ -8,6 +8,8 @@ namespace Microsoft.Maui.Handlers
 	public partial class DatePickerHandler : ViewHandler<IDatePicker, MauiDatePicker>
 	{
 		DatePickerDialog? _dialog;
+		EventHandler? _setDateLater;
+		EventHandler? _dismiss;
 
 		protected override MauiDatePicker CreatePlatformView()
 		{
@@ -52,6 +54,8 @@ namespace Microsoft.Maui.Handlers
 		{
 			if (_dialog != null)
 			{
+				_dialog.DismissEvent -= _dismiss;
+				_dialog.ShowEvent -= _setDateLater;
 				_dialog.Hide();
 				_dialog.Dispose();
 				_dialog = null;
@@ -144,19 +148,17 @@ namespace Microsoft.Maui.Handlers
 				_dialog = CreateDatePickerDialog(year, month, day);
 			else
 			{
-				EventHandler? setDateLater = null;
-				EventHandler? dismiss = null;
-				setDateLater = (sender, e) => { _dialog!.UpdateDate(year, month, day); _dialog.ShowEvent -= setDateLater; };
-				_dialog.ShowEvent += setDateLater;
-				dismiss = (sender, e) =>
+				_setDateLater = (sender, e) => { _dialog!.UpdateDate(year, month, day); _dialog.ShowEvent -= _setDateLater; };
+				_dialog.ShowEvent += _setDateLater;
+				_dismiss = (sender, e) =>
 				{
 					if (VirtualView != null)
 					{
 						VirtualView.IsFocused = false;
 					}
-					_dialog.DismissEvent -= dismiss;
+					_dialog.DismissEvent -= _dismiss;
 				};
-				_dialog.DismissEvent += dismiss;
+				_dialog.DismissEvent += _dismiss;
 			}
 
 			_dialog.Show();
