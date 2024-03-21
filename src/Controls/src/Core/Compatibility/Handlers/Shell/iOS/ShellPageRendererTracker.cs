@@ -543,11 +543,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 			public override void LayoutSubviews()
 			{
-				if (Height == null || Height == 0)
-				{
-					UpdateFrame(Superview);
-				}
-
+				UpdateFrame(Superview);
 				base.LayoutSubviews();
 			}
 
@@ -561,9 +557,6 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			{
 				if (newSuper is not null && newSuper.Bounds != CGRect.Empty)
 				{
-					if (!(OperatingSystem.IsIOSVersionAtLeast(11) || OperatingSystem.IsTvOSVersionAtLeast(11)))
-						Frame = new CGRect(Frame.X, newSuper.Bounds.Y, Frame.Width, newSuper.Bounds.Height);
-
 					Height = newSuper.Bounds.Height;
 				}
 			}
