@@ -5,8 +5,10 @@
     x:Class="Maui.Controls.Sample.Pages.iOSStatusBarPage" 
     ios:Page.PrefersStatusBarHidden="True" ios:Page.PreferredStatusBarUpdateAnimation="Fade"
     Title="Hide Status Bar">
-	<StackLayout Margin="20">
-		<Button Text="Toggle PrefersStatusBarHidden" Clicked="OnPrefersStatusBarHiddenButtonClicked" />
-		<Button Text="Toggle PreferredStatusBarUpdateAnimation" Clicked="OnPreferredStatusBarUpdateAnimationButtonClicked" />
-	</StackLayout>
+    <StackLayout>
+        <Button Text="Navigation page" Clicked="NavigationPage_Clicked"/>
+        <Button Text="Tabbed page" Clicked="TabbedPage_Clicked"/>
+        <Button Text="Flyout page" Clicked="FlyoutPage_Clicked"/>
+        <Button Text="Shell" Clicked="Shell_Clicked"/>
+    </StackLayout>
 </ContentPage>
