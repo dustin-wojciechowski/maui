@@ -40,31 +40,8 @@ namespace Microsoft.Maui.Platform
 
 		protected override void OnMeasure(int widthMeasureSpec, int heightMeasureSpec)
 		{
-			if (Icon is MauiResizableDrawable currentIcon)
-			{
-				// if there is BOTH an icon AND text, but the text layout has NOT been measured yet,
-				// we need to measure JUST the text first to get the remaining space for the icon
-				if (Layout is null && TextFormatted?.Length() > 0)
-				{
-					// remove the icon and measure JUST the text
-					Icon = null;
-					base.OnMeasure(widthMeasureSpec, heightMeasureSpec);
-
-					// restore the icon
-					Icon = currentIcon;
-				}
-
-				// determine the total client area available for BOTH the icon AND text to fit
-				var availableWidth = MeasureSpec.GetMode(widthMeasureSpec) == MeasureSpecMode.Unspecified
-					? int.MaxValue
-					: MeasureSpec.GetSize(widthMeasureSpec);
-				var availableHeight = MeasureSpec.GetMode(heightMeasureSpec) == MeasureSpecMode.Unspecified
-					? int.MaxValue
-					: MeasureSpec.GetSize(heightMeasureSpec);
-
-				// calculate the icon size based on the remaining space
-				CalculateIconSize(currentIcon, availableWidth, availableHeight);
-			}
+			// calculate the icon size based on the remaining space
+			CalculateIconSize(widthMeasureSpec, heightMeasureSpec);
 
 			// re-measure with both text and icon
 			base.OnMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -86,15 +63,29 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
-		void CalculateIconSize(MauiResizableDrawable resizable, int availableWidth, int availableHeight)
+		void CalculateIconSize(int widthMeasureSpec, int heightMeasureSpec)
 		{
-			// bail if the text layout is not available yet, this is most likely a bug
-			if (Layout is null)
-			{
+			if (Icon is null)
 				return;
-			}
 
-			var actual = resizable.Drawable;
+			Drawable actual;
+
+			if (Icon is MauiResizableDrawable resizableDrawable)
+			{
+				actual = resizableDrawable.Drawable;
+			}
+			else
+			{
+				actual = Icon;
+			}
+			
+			// determine the total client area available for BOTH the icon AND text to fit
+			var availableWidth = MeasureSpec.GetMode(widthMeasureSpec) == MeasureSpecMode.Unspecified
+				? int.MaxValue
+				: MeasureSpec.GetSize(widthMeasureSpec);
+			var availableHeight = MeasureSpec.GetMode(heightMeasureSpec) == MeasureSpecMode.Unspecified
+				? int.MaxValue
+				: MeasureSpec.GetSize(heightMeasureSpec);
 
 			var remainingWidth = availableWidth - PaddingLeft - PaddingRight;
 			var remainingHeight = availableHeight - PaddingTop - PaddingBottom;
@@ -111,40 +102,31 @@ namespace Microsoft.Maui.Platform
 			var iconWidth = Math.Min(remainingWidth, actual.IntrinsicWidth);
 			var iconHeight = Math.Min(remainingHeight, actual.IntrinsicHeight);
 
+			// We don't use IconSize because IconSize makes everything a square
+			// So if the image doesn't have equal width and height it'll distory the image
+			if (OperatingSystem.IsAndroidVersionAtLeast(23) && Icon is MauiResizableDrawable resizable)
+			{
+				var ratio = Math.Min(
+					(double)iconWidth / actual.IntrinsicWidth,
+					(double)iconHeight / actual.IntrinsicHeight);
 
-			var ratio = Math.Min(
-				(double)iconWidth / actual.IntrinsicWidth,
-				(double)iconHeight / actual.IntrinsicHeight);
-
-			resizable.SetPreferredSize(
-				Math.Max(0, (int)(actual.IntrinsicWidth * ratio)),
-				Math.Max(0, (int)(actual.IntrinsicHeight * ratio)));
-
-			// trigger a layout re-calculation
-			Icon = null;
-			Icon = resizable;
+				if (resizable.SetPreferredSize(
+					Math.Max(0, (int)(actual.IntrinsicWidth * ratio)),
+					Math.Max(0, (int)(actual.IntrinsicHeight * ratio))))
+				{
+					// trigger a layout re-calculation
+					Icon = null;
+					Icon = resizable;
+				}
+			}
+			else
+			{
+				IconSize = Math.Max(iconWidth, iconHeight);
+			}
 		}
 
 		bool IsIconGravityHorizontal =>
 			IconGravity is IconGravityTextStart or IconGravityTextEnd or IconGravityStart or IconGravityEnd;
-
-		int GetTextLayoutWidth()
-		{
-			float maxWidth = 0;
-			int lineCount = LineCount;
-			for (int line = 0; line < lineCount; line++)
-			{
-				maxWidth = Math.Max(maxWidth, Layout!.GetLineWidth(line));
-			}
-			return (int)Math.Ceiling(maxWidth);
-		}
-
-		int GetTextLayoutHeight()
-		{
-			var layoutHeight = Layout!.Height;
-
-			return layoutHeight;
-		}
 
 		internal class MauiResizableDrawable : LayerDrawable
 		{
@@ -152,16 +134,28 @@ namespace Microsoft.Maui.Platform
 				: base([drawable])
 			{
 				PaddingMode = (int)LayerDrawablePaddingMode.Stack;
+				if (OperatingSystem.IsAndroidVersionAtLeast(23))
+				{
+					SetLayerSize(0, drawable.IntrinsicWidth, drawable.IntrinsicHeight);
+				}
 			}
 
 			public Drawable Drawable => GetDrawable(0)!;
 
-			public void SetPreferredSize(int width, int height)
+			public bool SetPreferredSize(int width, int height)
 			{
 				if (OperatingSystem.IsAndroidVersionAtLeast(23))
 				{
+					if (NumberOfLayers > 0 && GetLayerWidth(0) == width && GetLayerHeight(0) == height)
+					{
+						return false;
+					}
+
 					SetLayerSize(0, width, height);
+					return true;
 				}
+
+				return false;
 
 				// TODO: find something that works for older versions
 			}
