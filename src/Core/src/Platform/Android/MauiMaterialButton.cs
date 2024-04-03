@@ -101,15 +101,16 @@ namespace Microsoft.Maui.Platform
 
 			if (IsIconGravityHorizontal)
 			{
-				remainingWidth -= IconPadding + GetTextLayoutWidth();
+				remainingWidth -= IconPadding;
 			}
 			else
 			{
-				remainingHeight -= IconPadding + GetTextLayoutHeight();
+				remainingHeight -= IconPadding;
 			}
 
 			var iconWidth = Math.Min(remainingWidth, actual.IntrinsicWidth);
 			var iconHeight = Math.Min(remainingHeight, actual.IntrinsicHeight);
+
 
 			var ratio = Math.Min(
 				(double)iconWidth / actual.IntrinsicWidth,
