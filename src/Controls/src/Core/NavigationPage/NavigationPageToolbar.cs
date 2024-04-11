@@ -273,7 +273,7 @@ namespace Microsoft.Maui.Controls
 
 		Color GetBarTextColor() => _currentNavigationPage?.BarTextColor;
 		Color GetIconColor() => (_currentPage != null) ? NavigationPage.GetIconColor(_currentPage) : null;
-		string GetTitle() => GetTitleView() != null ? String.Empty : _currentPage?.Title;
+		string GetTitle() => GetTitleView() != null ? String.Empty : _currentNavigationPage.CurrentPage?.Title;
 
 		VisualElement GetTitleView()
 		{
