@@ -13,7 +13,7 @@ namespace Maui.Controls.Sample
 #if __ANDROID__ || __IOS__
 				.UseMauiMaps()
 #endif
-				.UseMauiApp<App>()
+				.UseMauiApp<MauiCollectionViewContentViewbug.App>()
 				.Build();
 	}
 
